@@ -65,8 +65,7 @@ const AdminLogin = ({ isOpen, onClose, onLogin }: AdminLoginProps) => {
           </div>
           
           <div className="bg-secondary/30 p-4 rounded-2xl border border-secondary/50">
-            <p className="text-[10px] text-muted-foreground font-bold uppercase mb-1">Dev Tip:</p>
-            <p className="text-xs text-primary/80 italic">The default password is <span className="font-mono font-bold select-all bg-primary/10 px-1 rounded">admin123</span></p>
+            <p className="text-xs text-muted-foreground">Enter the tournament admin password to unlock management features.</p>
           </div>
 
           <button 
