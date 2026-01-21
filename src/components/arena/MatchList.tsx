@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Match, Team, MatchEvent } from '@/types/arena';
+import { Match, Team } from '@/types/arena';
 import { Plus, Check, Clock, Play, Users, Calendar, Trash2, Target, X, Swords, Trophy } from 'lucide-react';
 
 interface MatchListProps {
@@ -8,10 +8,11 @@ interface MatchListProps {
   onUpdateMatch: (match: Match) => void;
   onAddMatch: (teamAId: string, teamBId: string, phase?: 'group' | 'semifinal' | 'final') => void;
   onDeleteMatch: (matchId: string) => void;
+  onRecordGoal: (matchId: string, playerId: string, teamId: string, match: Match) => void;
   isAdmin: boolean;
 }
 
-const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, isAdmin }: MatchListProps) => {
+const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, onRecordGoal, isAdmin }: MatchListProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [selectedA, setSelectedA] = useState('');
   const [selectedB, setSelectedB] = useState('');
@@ -32,24 +33,10 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, i
     onUpdateMatch({ ...match, status });
   };
 
-  const recordGoal = (playerId: string) => {
+  const handleRecordGoal = (playerId: string) => {
     if (!isAdmin || !scoringContext) return;
     const { match, teamId } = scoringContext;
-    const isTeamA = teamId === match.teamAId;
-    
-    const newEvent: MatchEvent = {
-      type: 'goal',
-      playerId,
-      teamId,
-      timestamp: Date.now()
-    };
-
-    onUpdateMatch({
-      ...match,
-      scoreA: isTeamA ? match.scoreA + 1 : match.scoreA,
-      scoreB: isTeamA ? match.scoreB : match.scoreB + 1,
-      events: [...match.events, newEvent]
-    });
+    onRecordGoal(match.id, playerId, teamId, match);
     setScoringContext(null);
   };
 
@@ -93,10 +80,30 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, i
     group: matches.filter(m => !m.phase || m.phase === 'group')
   }), [matches]);
 
+  // Get goal scorers for a match
+  const getMatchScorers = (match: Match) => {
+    const scorers: { teamA: string[]; teamB: string[] } = { teamA: [], teamB: [] };
+    match.events
+      .filter(e => e.type === 'goal')
+      .forEach(event => {
+        const player = teams.flatMap(t => t.players).find(p => p.id === event.playerId);
+        if (player) {
+          if (event.teamId === match.teamAId) {
+            scorers.teamA.push(player.name);
+          } else {
+            scorers.teamB.push(player.name);
+          }
+        }
+      });
+    return scorers;
+  };
+
   const renderMatch = (match: Match) => {
     const teamA = teams.find(t => t.id === match.teamAId);
     const teamB = teams.find(t => t.id === match.teamBId);
     if (!teamA || !teamB) return null;
+
+    const scorers = getMatchScorers(match);
 
     return (
       <div key={match.id} className="glass-card rounded-2xl overflow-hidden hover:border-accent transition-colors group relative border-l-4" style={{borderLeftColor: match.phase === 'final' ? '#fbbf24' : match.phase === 'semifinal' ? '#3b82f6' : 'transparent'}}>
@@ -125,6 +132,16 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, i
                 <span className="text-2xl font-black" style={{ color: teamA.color }}>{teamA.name.charAt(0)}</span>
               </div>
               <p className="font-bold text-secondary-foreground text-sm">{teamA.name}</p>
+              {/* Team A Scorers */}
+              {(match.status === 'live' || match.status === 'finished') && scorers.teamA.length > 0 && (
+                <div className="mt-2 space-y-0.5">
+                  {scorers.teamA.map((name, i) => (
+                    <p key={i} className="text-[10px] text-amber flex items-center justify-center gap-1">
+                      <Target className="w-3 h-3" /> {name}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col items-center gap-2">
@@ -150,6 +167,16 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, i
                 <span className="text-2xl font-black" style={{ color: teamB.color }}>{teamB.name.charAt(0)}</span>
               </div>
               <p className="font-bold text-secondary-foreground text-sm">{teamB.name}</p>
+              {/* Team B Scorers */}
+              {(match.status === 'live' || match.status === 'finished') && scorers.teamB.length > 0 && (
+                <div className="mt-2 space-y-0.5">
+                  {scorers.teamB.map((name, i) => (
+                    <p key={i} className="text-[10px] text-amber flex items-center justify-center gap-1">
+                      <Target className="w-3 h-3" /> {name}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -186,7 +213,7 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, i
             </div>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {teams.find(t => t.id === scoringContext.teamId)?.players.map(player => (
-                <button key={player.id} onClick={() => recordGoal(player.id)} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors text-left">
+                <button key={player.id} onClick={() => handleRecordGoal(player.id)} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors text-left">
                   <img src={player.photoUrl || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop"} className="w-10 h-10 rounded-full object-cover border border-secondary" alt={player.name} />
                   <span className="font-bold text-secondary-foreground">{player.name}</span>
                 </button>
