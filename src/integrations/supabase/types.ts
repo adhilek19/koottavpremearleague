@@ -14,7 +14,198 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      match_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          match_id: string
+          player_id: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          match_id: string
+          player_id: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          match_id?: string
+          player_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_events_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          created_at: string
+          id: string
+          phase: string | null
+          score_a: number
+          score_b: number
+          status: string
+          team_a_id: string
+          team_b_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          phase?: string | null
+          score_a?: number
+          score_b?: number
+          status?: string
+          team_a_id: string
+          team_b_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          phase?: string | null
+          score_a?: number
+          score_b?: number
+          status?: string
+          team_a_id?: string
+          team_b_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_team_a_id_fkey"
+            columns: ["team_a_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_team_b_id_fkey"
+            columns: ["team_b_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          assists: number
+          created_at: string
+          goals: number
+          id: string
+          market_value: number | null
+          name: string
+          photo_url: string | null
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          assists?: number
+          created_at?: string
+          goals?: number
+          id?: string
+          market_value?: number | null
+          name: string
+          photo_url?: string | null
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          assists?: number
+          created_at?: string
+          goals?: number
+          id?: string
+          market_value?: number | null
+          name?: string
+          photo_url?: string | null
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          color: string
+          created_at: string
+          drawn: number
+          ga: number
+          gf: number
+          group: string | null
+          id: string
+          lost: number
+          name: string
+          played: number
+          points: number
+          updated_at: string
+          won: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          drawn?: number
+          ga?: number
+          gf?: number
+          group?: string | null
+          id?: string
+          lost?: number
+          name: string
+          played?: number
+          points?: number
+          updated_at?: string
+          won?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          drawn?: number
+          ga?: number
+          gf?: number
+          group?: string | null
+          id?: string
+          lost?: number
+          name?: string
+          played?: number
+          points?: number
+          updated_at?: string
+          won?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

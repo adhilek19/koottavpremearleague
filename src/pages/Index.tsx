@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Team, Match, AppView, Player, MatchEvent } from '@/types/arena';
-import { INITIAL_TEAMS } from '@/constants/teams';
+import { useState, useEffect, useMemo } from 'react';
+import { AppView, Match } from '@/types/arena';
+import { useArenaData } from '@/hooks/useArenaData';
 import Dashboard from '@/components/arena/Dashboard';
 import Standings from '@/components/arena/Standings';
 import TeamList from '@/components/arena/TeamList';
@@ -8,236 +8,48 @@ import MatchList from '@/components/arena/MatchList';
 import Stats from '@/components/arena/Stats';
 import PlayerProfile from '@/components/arena/PlayerProfile';
 import AdminLogin from '@/components/arena/AdminLogin';
-import { Trophy, Users, Calendar, BarChart3, LayoutDashboard, ShieldCheck, LogOut, ShieldAlert, Target, Play } from 'lucide-react';
+import { Trophy, Users, Calendar, BarChart3, LayoutDashboard, ShieldCheck, LogOut, ShieldAlert, Target, Play, Loader2 } from 'lucide-react';
 
 const Index = () => {
   const [view, setView] = useState<AppView>('dashboard');
-  const [teams, setTeams] = useState<Team[]>(INITIAL_TEAMS);
-  const [matches, setMatches] = useState<Match[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
-  const [notification, setNotification] = useState<{message: string, type: 'goal' | 'start' | 'info'} | null>(null);
-  
-  const prevMatchesRef = useRef<Match[]>([]);
-  const teamsRef = useRef<Team[]>(INITIAL_TEAMS);
 
-  const channel = useMemo(() => new BroadcastChannel('arena_live_updates'), []);
+  const {
+    teams,
+    matches,
+    loading,
+    notification,
+    addTeam,
+    deleteTeam,
+    updateTeam,
+    updatePlayer,
+    transferPlayer,
+    addMatch,
+    updateMatch,
+    recordGoal,
+    deleteMatch,
+    resetTournament,
+    allPlayers
+  } = useArenaData();
 
   useEffect(() => {
-    teamsRef.current = teams;
-  }, [teams]);
-
-  useEffect(() => {
-    const savedTeams = localStorage.getItem('arena_teams');
-    const savedMatches = localStorage.getItem('arena_matches');
     const savedAuth = localStorage.getItem('arena_admin');
-    
-    if (savedTeams) {
-      const parsedTeams = JSON.parse(savedTeams);
-      setTeams(parsedTeams);
-      teamsRef.current = parsedTeams;
-    }
-    if (savedMatches) {
-      const parsedMatches = JSON.parse(savedMatches);
-      setMatches(parsedMatches);
-      prevMatchesRef.current = parsedMatches;
-    }
     if (savedAuth === 'true') setIsAdmin(true);
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'arena_teams' && e.newValue) {
-        setTeams(JSON.parse(e.newValue));
-      }
-      if (e.key === 'arena_matches' && e.newValue) {
-        const newMatches = JSON.parse(e.newValue);
-        checkForNewEvents(newMatches);
-        setMatches(newMatches);
-      }
-    };
-
-    channel.onmessage = (event) => {
-      if (event.data.type === 'REFRESH_DATA') {
-        const t = localStorage.getItem('arena_teams');
-        const m = localStorage.getItem('arena_matches');
-        if (t) setTeams(JSON.parse(t));
-        if (m) {
-          const newMatches = JSON.parse(m);
-          checkForNewEvents(newMatches);
-          setMatches(newMatches);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      channel.close();
-    };
-  }, [channel]);
-
-  const checkForNewEvents = (newMatches: Match[]) => {
-    newMatches.forEach(newM => {
-      const oldM = prevMatchesRef.current.find(m => m.id === newM.id);
-      if (!oldM) return;
-
-      if (newM.scoreA > oldM.scoreA || newM.scoreB > oldM.scoreB) {
-        const lastEvent = newM.events[newM.events.length - 1];
-        const player = teamsRef.current.flatMap(t => t.players).find(p => p.id === lastEvent?.playerId);
-        if (player) {
-          showNotification(`GOAL! ${player.name} scores! (${newM.scoreA}-${newM.scoreB})`, 'goal');
-        }
-      }
-
-      if (oldM.status === 'pending' && newM.status === 'live') {
-        const teamA = teamsRef.current.find(t => t.id === newM.teamAId);
-        const teamB = teamsRef.current.find(t => t.id === newM.teamBId);
-        showNotification(`${teamA?.name} vs ${teamB?.name} has just kicked off!`, 'start');
-      }
-    });
-    prevMatchesRef.current = newMatches;
-  };
-
-  const showNotification = (message: string, type: 'goal' | 'start' | 'info') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 5000);
-  };
-
-  const broadcastUpdate = () => {
-    channel.postMessage({ type: 'REFRESH_DATA' });
-  };
-
-  useEffect(() => {
-    localStorage.setItem('arena_teams', JSON.stringify(teams));
-    localStorage.setItem('arena_matches', JSON.stringify(matches));
-    localStorage.setItem('arena_admin', isAdmin.toString());
-  }, [teams, matches, isAdmin]);
-
-  const allPlayers = useMemo(() => teams.flatMap(t => t.players), [teams]);
-
-  const updateTeamStats = useCallback((match: Match) => {
-    if (match.status !== 'finished' || match.phase !== 'group') return;
-    setTeams(prev => {
-      const updated = prev.map(team => {
-        const isTeamA = team.id === match.teamAId;
-        const isTeamB = team.id === match.teamBId;
-        if (!isTeamA && !isTeamB) return team;
-        
-        const myScore = isTeamA ? match.scoreA : match.scoreB;
-        const oppScore = isTeamA ? match.scoreB : match.scoreA;
-        const newTeam = { ...team };
-        newTeam.played += 1;
-        newTeam.gf += myScore;
-        newTeam.ga += oppScore;
-        
-        if (myScore > oppScore) { newTeam.won += 1; newTeam.points += 3; }
-        else if (myScore === oppScore) { newTeam.drawn += 1; newTeam.points += 1; }
-        else { newTeam.lost += 1; }
-
-        const teamEvents = match.events.filter(e => e.teamId === team.id);
-        newTeam.players = newTeam.players.map(p => {
-          const goals = teamEvents.filter(e => e.type === 'goal' && e.playerId === p.id).length;
-          const assists = teamEvents.filter(e => e.type === 'assist' && e.playerId === p.id).length;
-          return { ...p, goals: p.goals + goals, assists: p.assists + assists };
-        });
-        return newTeam;
-      });
-      return updated;
-    });
   }, []);
 
-  const addTeam = (name: string, color: string, group: 'A' | 'B' = 'A') => {
-    if (!isAdmin) return;
-    const newId = Math.random().toString(36).substr(2, 9);
-    const newTeam: Team = {
-      id: newId, name, color, group, players: Array.from({ length: 7 }).map((_, i) => ({
-        id: `${newId}-p${i + 1}`, name: `New Player ${i + 1}`, goals: 0, assists: 0, teamId: newId,
-        photoUrl: "https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=400&h=400&fit=crop", marketValue: 10000
-      })),
-      played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, points: 0
-    };
-    setTeams(prev => [...prev, newTeam]);
-    broadcastUpdate();
+  useEffect(() => {
+    localStorage.setItem('arena_admin', isAdmin.toString());
+  }, [isAdmin]);
+
+  const handleUpdateMatch = async (updatedMatch: Match) => {
+    await updateMatch(updatedMatch);
   };
 
-  const deleteTeam = (teamId: string) => {
-    if (!isAdmin || !window.confirm("Delete team and all its history?")) return;
-    setTeams(prev => prev.filter(t => t.id !== teamId));
-    setMatches(prev => prev.filter(m => m.teamAId !== teamId && m.teamBId !== teamId));
-    broadcastUpdate();
-  };
-
-  const updateTeam = (teamId: string, updates: Partial<Team>) => {
-    if (!isAdmin) return;
-    setTeams(prev => prev.map(t => t.id === teamId ? { ...t, ...updates } : t));
-    broadcastUpdate();
-  };
-
-  const updatePlayer = (playerId: string, teamId: string, updates: { name?: string; photoUrl?: string; marketValue?: number }) => {
-    if (!isAdmin) return;
-    setTeams(prev => prev.map(t => {
-      if (t.id !== teamId) return t;
-      return { ...t, players: t.players.map(p => p.id === playerId ? { ...p, ...updates } : p) };
-    }));
-    broadcastUpdate();
-  };
-
-  const transferPlayer = (playerId: string, currentTeamId: string, targetTeamId: string) => {
-    if (!isAdmin) return;
-    setTeams(prev => {
-      let playerToMove: Player | undefined;
-      const updatedTeams = prev.map(t => {
-        if (t.id === currentTeamId) {
-          playerToMove = t.players.find(p => p.id === playerId);
-          return { ...t, players: t.players.filter(p => p.id !== playerId) };
-        }
-        return t;
-      });
-      if (playerToMove) {
-        return updatedTeams.map(t => t.id === targetTeamId ? { ...t, players: [...t.players, { ...playerToMove!, teamId: targetTeamId }] } : t);
-      }
-      return prev;
-    });
-    broadcastUpdate();
-  };
-
-  const addMatch = (teamAId: string, teamBId: string, phase: 'group' | 'semifinal' | 'final' = 'group') => {
-    if (!isAdmin) return;
-    const newMatch: Match = {
-      id: Math.random().toString(36).substr(2, 9),
-      teamAId, teamBId, scoreA: 0, scoreB: 0, status: 'pending', events: [], phase
-    };
-    setMatches(prev => [newMatch, ...prev]);
-    broadcastUpdate();
-    setView('matches');
-  };
-
-  const updateMatch = (updatedMatch: Match) => {
-    if (!isAdmin) return;
-    setMatches(prev => {
-      const updated = prev.map(m => m.id === updatedMatch.id ? updatedMatch : m);
-      checkForNewEvents(updated);
-      return updated;
-    });
-    broadcastUpdate();
-    if (updatedMatch.status === 'finished') {
-      updateTeamStats(updatedMatch);
-    }
-  };
-
-  const deleteMatch = (matchId: string) => {
-    if (!isAdmin || !window.confirm("Delete this match?")) return;
-    setMatches(prev => prev.filter(m => m.id !== matchId));
-    broadcastUpdate();
-  };
-
-  const resetTournament = () => {
-    if (!isAdmin || !window.confirm("RESET ALL DATA? This cannot be undone.")) return;
-    setMatches([]);
-    setTeams(INITIAL_TEAMS);
-    localStorage.clear();
-    broadcastUpdate();
-    setView('dashboard');
+  const handleRecordGoal = async (matchId: string, playerId: string, teamId: string, match: Match) => {
+    const isTeamA = teamId === match.teamAId;
+    await recordGoal(matchId, playerId, teamId, isTeamA, match);
   };
 
   const navigateToPlayer = (playerId: string) => {
@@ -252,6 +64,17 @@ const Index = () => {
     { id: 'teams', icon: Users, label: 'Teams' },
     { id: 'stats', icon: BarChart3, label: 'Stats' },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-primary animate-spin" />
+          <p className="text-muted-foreground font-bold uppercase tracking-widest text-sm">Loading Arena...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-background text-foreground overflow-hidden font-inter">
@@ -335,7 +158,7 @@ const Index = () => {
           {view === 'dashboard' && <Dashboard teams={teams} matches={matches} setView={setView} isAdmin={isAdmin} />}
           {view === 'standings' && <Standings teams={teams} />}
           {view === 'teams' && <TeamList teams={teams} onUpdatePlayer={updatePlayer} onTransferPlayer={transferPlayer} onUpdateTeam={updateTeam} isAdmin={isAdmin} onPlayerClick={navigateToPlayer} onAddTeam={addTeam} onDeleteTeam={deleteTeam} />}
-          {view === 'matches' && <MatchList matches={matches} teams={teams} onUpdateMatch={updateMatch} onAddMatch={addMatch} onDeleteMatch={deleteMatch} isAdmin={isAdmin} />}
+          {view === 'matches' && <MatchList matches={matches} teams={teams} onUpdateMatch={handleUpdateMatch} onAddMatch={addMatch} onDeleteMatch={deleteMatch} isAdmin={isAdmin} onRecordGoal={handleRecordGoal} />}
           {view === 'stats' && <Stats players={allPlayers} teams={teams} matches={matches} onPlayerClick={navigateToPlayer} />}
           {view === 'player' && selectedPlayerId && (
             <PlayerProfile player={allPlayers.find(p => p.id === selectedPlayerId)!} team={teams.find(t => t.id === allPlayers.find(p => p.id === selectedPlayerId)?.teamId)} matches={matches} onBack={() => setView('teams')} />
