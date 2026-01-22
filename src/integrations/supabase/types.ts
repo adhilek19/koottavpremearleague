@@ -167,6 +167,7 @@ export type Database = {
           gf: number
           group: string | null
           id: string
+          logo_url: string | null
           lost: number
           name: string
           played: number
@@ -182,6 +183,7 @@ export type Database = {
           gf?: number
           group?: string | null
           id?: string
+          logo_url?: string | null
           lost?: number
           name: string
           played?: number
@@ -197,6 +199,7 @@ export type Database = {
           gf?: number
           group?: string | null
           id?: string
+          logo_url?: string | null
           lost?: number
           name?: string
           played?: number
