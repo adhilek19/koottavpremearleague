@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Team, Match, Player, MatchEvent } from '@/types/arena';
+import { Team, Match, Player, MatchEvent, Substitution } from '@/types/arena';
 import { INITIAL_TEAMS } from '@/constants/teams';
 
 interface DbTeam {
@@ -35,6 +35,8 @@ interface DbMatch {
   score_b: number;
   status: string;
   phase: string | null;
+  started_at: string | null;
+  half: string | null;
 }
 
 interface DbMatchEvent {
@@ -44,6 +46,16 @@ interface DbMatchEvent {
   team_id: string;
   event_type: string;
   created_at: string;
+}
+
+interface DbSubstitution {
+  id: string;
+  match_id: string;
+  team_id: string;
+  player_out_id: string;
+  player_in_id: string;
+  minute: number;
+  half: string;
 }
 
 export const useArenaData = () => {
@@ -63,17 +75,19 @@ export const useArenaData = () => {
   // Fetch all data
   const fetchData = useCallback(async () => {
     try {
-      const [teamsRes, playersRes, matchesRes, eventsRes] = await Promise.all([
+      const [teamsRes, playersRes, matchesRes, eventsRes, subsRes] = await Promise.all([
         supabase.from('teams').select('*'),
         supabase.from('players').select('*'),
         supabase.from('matches').select('*').order('created_at', { ascending: false }),
-        supabase.from('match_events').select('*')
+        supabase.from('match_events').select('*'),
+        supabase.from('substitutions').select('*')
       ]);
 
       if (teamsRes.error) throw teamsRes.error;
       if (playersRes.error) throw playersRes.error;
       if (matchesRes.error) throw matchesRes.error;
       if (eventsRes.error) throw eventsRes.error;
+      if (subsRes.error) throw subsRes.error;
 
       // If no teams exist, seed with initial data
       if ((teamsRes.data as DbTeam[]).length === 0) {
@@ -86,6 +100,7 @@ export const useArenaData = () => {
       const dbPlayers = playersRes.data as DbPlayer[];
       const dbMatches = matchesRes.data as DbMatch[];
       const dbEvents = eventsRes.data as DbMatchEvent[];
+      const dbSubs = subsRes.data as DbSubstitution[];
 
       const mappedTeams: Team[] = dbTeams.map(t => ({
         id: t.id,
@@ -120,6 +135,8 @@ export const useArenaData = () => {
         scoreB: m.score_b,
         status: m.status as 'pending' | 'live' | 'finished',
         phase: (m.phase as 'group' | 'semifinal' | 'final') || 'group',
+        startedAt: m.started_at || undefined,
+        half: (m.half as 'first' | 'second' | 'finished') || 'first',
         events: dbEvents
           .filter(e => e.match_id === m.id)
           .map(e => ({
@@ -127,6 +144,17 @@ export const useArenaData = () => {
             playerId: e.player_id,
             teamId: e.team_id,
             timestamp: new Date(e.created_at).getTime()
+          })),
+        substitutions: dbSubs
+          .filter(s => s.match_id === m.id)
+          .map(s => ({
+            id: s.id,
+            matchId: s.match_id,
+            teamId: s.team_id,
+            playerOutId: s.player_out_id,
+            playerInId: s.player_in_id,
+            minute: s.minute,
+            half: s.half as 'first' | 'second'
           }))
       }));
 
@@ -211,6 +239,7 @@ export const useArenaData = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'match_events' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'substitutions' }, () => fetchData())
       .subscribe();
 
     return () => {
@@ -278,7 +307,8 @@ export const useArenaData = () => {
       score_a: 0,
       score_b: 0,
       status: 'pending',
-      phase
+      phase,
+      half: 'first'
     });
   };
 
@@ -287,7 +317,9 @@ export const useArenaData = () => {
       score_a: match.scoreA,
       score_b: match.scoreB,
       status: match.status,
-      phase: match.phase
+      phase: match.phase,
+      started_at: match.startedAt,
+      half: match.half
     }).eq('id', match.id);
 
     // If match just finished, update team stats
@@ -343,11 +375,23 @@ export const useArenaData = () => {
     }
   };
 
+  const recordSubstitution = async (matchId: string, teamId: string, playerOutId: string, playerInId: string, minute: number, half: 'first' | 'second') => {
+    await supabase.from('substitutions').insert({
+      match_id: matchId,
+      team_id: teamId,
+      player_out_id: playerOutId,
+      player_in_id: playerInId,
+      minute,
+      half
+    });
+  };
+
   const deleteMatch = async (matchId: string) => {
     await supabase.from('matches').delete().eq('id', matchId);
   };
 
   const resetTournament = async () => {
+    await supabase.from('substitutions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('match_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('players').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -368,6 +412,7 @@ export const useArenaData = () => {
     addMatch,
     updateMatch,
     recordGoal,
+    recordSubstitution,
     deleteMatch,
     resetTournament,
     allPlayers: teams.flatMap(t => t.players)

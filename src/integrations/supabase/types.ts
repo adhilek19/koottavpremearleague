@@ -66,10 +66,12 @@ export type Database = {
       matches: {
         Row: {
           created_at: string
+          half: string | null
           id: string
           phase: string | null
           score_a: number
           score_b: number
+          started_at: string | null
           status: string
           team_a_id: string
           team_b_id: string
@@ -77,10 +79,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          half?: string | null
           id?: string
           phase?: string | null
           score_a?: number
           score_b?: number
+          started_at?: string | null
           status?: string
           team_a_id: string
           team_b_id: string
@@ -88,10 +92,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          half?: string | null
           id?: string
           phase?: string | null
           score_a?: number
           score_b?: number
+          started_at?: string | null
           status?: string
           team_a_id?: string
           team_b_id?: string
@@ -151,6 +157,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      substitutions: {
+        Row: {
+          created_at: string
+          half: string
+          id: string
+          match_id: string
+          minute: number
+          player_in_id: string
+          player_out_id: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          half?: string
+          id?: string
+          match_id: string
+          minute: number
+          player_in_id: string
+          player_out_id: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          half?: string
+          id?: string
+          match_id?: string
+          minute?: number
+          player_in_id?: string
+          player_out_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "substitutions_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_player_in_id_fkey"
+            columns: ["player_in_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_player_out_id_fkey"
+            columns: ["player_out_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
