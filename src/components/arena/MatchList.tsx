@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
-import { Match, Team } from '@/types/arena';
-import { Plus, Check, Clock, Play, Users, Calendar, Trash2, Target, X, Swords, Trophy } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Match, Team, Player } from '@/types/arena';
+import { Plus, Check, Clock, Play, Users, Calendar, Trash2, Target, X, Swords, Trophy, Timer, ArrowRightLeft, Pause } from 'lucide-react';
 
 interface MatchListProps {
   matches: Match[];
@@ -9,15 +9,49 @@ interface MatchListProps {
   onAddMatch: (teamAId: string, teamBId: string, phase?: 'group' | 'semifinal' | 'final') => void;
   onDeleteMatch: (matchId: string) => void;
   onRecordGoal: (matchId: string, playerId: string, teamId: string, match: Match) => void;
+  onRecordSubstitution?: (matchId: string, teamId: string, playerOutId: string, playerInId: string, minute: number, half: 'first' | 'second') => void;
   isAdmin: boolean;
 }
 
-const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, onRecordGoal, isAdmin }: MatchListProps) => {
+const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, onRecordGoal, onRecordSubstitution, isAdmin }: MatchListProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [selectedA, setSelectedA] = useState('');
   const [selectedB, setSelectedB] = useState('');
   const [selectedPhase, setSelectedPhase] = useState<'group' | 'semifinal' | 'final'>('group');
   const [scoringContext, setScoringContext] = useState<{ match: Match; teamId: string } | null>(null);
+  const [subContext, setSubContext] = useState<{ match: Match; teamId: string; step: 'out' | 'in'; playerOutId?: string } | null>(null);
+  const [matchTimers, setMatchTimers] = useState<Record<string, number>>({});
+
+  // Timer logic for live matches
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newTimers: Record<string, number> = {};
+      matches.forEach(match => {
+        if (match.status === 'live' && match.startedAt) {
+          const startTime = new Date(match.startedAt).getTime();
+          const now = Date.now();
+          const elapsed = Math.floor((now - startTime) / 1000);
+          newTimers[match.id] = elapsed;
+        }
+      });
+      setMatchTimers(newTimers);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [matches]);
+
+  const formatMatchTime = (matchId: string, half: string | undefined) => {
+    const totalSeconds = matchTimers[matchId] || 0;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    const displayMinutes = half === 'second' ? minutes + 45 : minutes;
+    return `${String(Math.min(displayMinutes, 90)).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
+  const getMatchMinute = (matchId: string, half: string | undefined) => {
+    const totalSeconds = matchTimers[matchId] || 0;
+    const minutes = Math.floor(totalSeconds / 60);
+    return half === 'second' ? minutes + 45 : minutes;
+  };
 
   const handleCreate = () => {
     if (selectedA && selectedB && selectedA !== selectedB) {
@@ -28,9 +62,28 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
     }
   };
 
-  const updateStatus = (match: Match, status: 'live' | 'finished') => {
+  const startMatch = (match: Match) => {
     if (!isAdmin) return;
-    onUpdateMatch({ ...match, status });
+    onUpdateMatch({ 
+      ...match, 
+      status: 'live', 
+      startedAt: new Date().toISOString(),
+      half: 'first'
+    });
+  };
+
+  const startSecondHalf = (match: Match) => {
+    if (!isAdmin) return;
+    onUpdateMatch({ 
+      ...match, 
+      startedAt: new Date().toISOString(),
+      half: 'second'
+    });
+  };
+
+  const endMatch = (match: Match) => {
+    if (!isAdmin) return;
+    onUpdateMatch({ ...match, status: 'finished', half: 'finished' });
   };
 
   const handleRecordGoal = (playerId: string) => {
@@ -38,6 +91,25 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
     const { match, teamId } = scoringContext;
     onRecordGoal(match.id, playerId, teamId, match);
     setScoringContext(null);
+  };
+
+  const handleSubstitution = (playerId: string) => {
+    if (!isAdmin || !subContext || !onRecordSubstitution) return;
+    
+    if (subContext.step === 'out') {
+      setSubContext({ ...subContext, step: 'in', playerOutId: playerId });
+    } else if (subContext.playerOutId) {
+      const minute = getMatchMinute(subContext.match.id, subContext.match.half);
+      onRecordSubstitution(
+        subContext.match.id,
+        subContext.teamId,
+        subContext.playerOutId,
+        playerId,
+        minute,
+        (subContext.match.half as 'first' | 'second') || 'first'
+      );
+      setSubContext(null);
+    }
   };
 
   const getSortedGroup = (group: 'A' | 'B') => {
@@ -98,32 +170,62 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
     return scorers;
   };
 
+  // Get substitutions for a match by team
+  const getMatchSubstitutions = (match: Match, teamId: string) => {
+    return (match.substitutions || [])
+      .filter(s => s.teamId === teamId)
+      .map(s => {
+        const playerOut = teams.flatMap(t => t.players).find(p => p.id === s.playerOutId);
+        const playerIn = teams.flatMap(t => t.players).find(p => p.id === s.playerInId);
+        return { ...s, playerOutName: playerOut?.name || 'Unknown', playerInName: playerIn?.name || 'Unknown' };
+      });
+  };
+
   const renderMatch = (match: Match) => {
     const teamA = teams.find(t => t.id === match.teamAId);
     const teamB = teams.find(t => t.id === match.teamBId);
     if (!teamA || !teamB) return null;
 
     const scorers = getMatchScorers(match);
+    const subsA = getMatchSubstitutions(match, teamA.id);
+    const subsB = getMatchSubstitutions(match, teamB.id);
 
     return (
       <div key={match.id} className="glass-card rounded-2xl overflow-hidden hover:border-accent transition-colors group relative border-l-4" style={{borderLeftColor: match.phase === 'final' ? '#fbbf24' : match.phase === 'semifinal' ? '#3b82f6' : 'transparent'}}>
         {isAdmin && (
-          <button onClick={() => onDeleteMatch(match.id)} className="absolute top-4 right-4 p-2 bg-destructive/10 text-destructive rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20">
+          <button onClick={() => onDeleteMatch(match.id)} className="absolute top-4 right-4 p-2 bg-destructive/10 text-destructive rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 z-10">
             <Trash2 className="w-4 h-4" />
           </button>
         )}
         
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded ${
-              match.status === 'live' ? 'bg-arena-red/20 text-arena-red animate-pulse' :
-              match.status === 'finished' ? 'bg-primary/20 text-primary' :
-              'bg-secondary text-muted-foreground'
-            }`}>
-              {match.status === 'live' && <span className="inline-block w-1.5 h-1.5 bg-arena-red rounded-full mr-1"></span>}
-              {match.phase && match.phase !== 'group' ? `${match.phase} • ` : ''}{match.status}
-            </span>
-            {match.phase === 'final' && <Trophy className="w-5 h-5 text-amber" />}
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded ${
+                match.status === 'live' ? 'bg-arena-red/20 text-arena-red animate-pulse' :
+                match.status === 'finished' ? 'bg-primary/20 text-primary' :
+                'bg-secondary text-muted-foreground'
+              }`}>
+                {match.status === 'live' && <span className="inline-block w-1.5 h-1.5 bg-arena-red rounded-full mr-1"></span>}
+                {match.phase && match.phase !== 'group' ? `${match.phase} • ` : ''}{match.status}
+              </span>
+              {match.status === 'live' && match.half && (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-secondary text-secondary-foreground">
+                  {match.half === 'first' ? '1st Half' : match.half === 'second' ? '2nd Half' : 'FT'}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {match.status === 'live' && (
+                <div className="flex items-center gap-1.5 bg-arena-red/10 px-3 py-1.5 rounded-lg">
+                  <Timer className="w-4 h-4 text-arena-red animate-pulse" />
+                  <span className="font-mono font-black text-arena-red text-sm">
+                    {formatMatchTime(match.id, match.half)}
+                  </span>
+                </div>
+              )}
+              {match.phase === 'final' && <Trophy className="w-5 h-5 text-amber" />}
+            </div>
           </div>
 
           <div className="flex items-center justify-center gap-6 py-4">
@@ -138,6 +240,20 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
                   {scorers.teamA.map((name, i) => (
                     <p key={i} className="text-[10px] text-amber flex items-center justify-center gap-1">
                       <Target className="w-3 h-3" /> {name}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {/* Team A Substitutions */}
+              {subsA.length > 0 && (
+                <div className="mt-2 space-y-0.5">
+                  {subsA.map((sub, i) => (
+                    <p key={i} className="text-[9px] text-muted-foreground flex items-center justify-center gap-1">
+                      <ArrowRightLeft className="w-3 h-3 text-arena-blue" />
+                      <span className="text-arena-red">{sub.playerOutName}</span>
+                      <span>→</span>
+                      <span className="text-primary">{sub.playerInName}</span>
+                      <span className="opacity-60">{sub.minute}'</span>
                     </p>
                   ))}
                 </div>
@@ -177,20 +293,51 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
                   ))}
                 </div>
               )}
+              {/* Team B Substitutions */}
+              {subsB.length > 0 && (
+                <div className="mt-2 space-y-0.5">
+                  {subsB.map((sub, i) => (
+                    <p key={i} className="text-[9px] text-muted-foreground flex items-center justify-center gap-1">
+                      <ArrowRightLeft className="w-3 h-3 text-arena-blue" />
+                      <span className="text-arena-red">{sub.playerOutName}</span>
+                      <span>→</span>
+                      <span className="text-primary">{sub.playerInName}</span>
+                      <span className="opacity-60">{sub.minute}'</span>
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {isAdmin && (
-            <div className="flex gap-2 mt-4 pt-4 border-t border-secondary">
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-secondary">
               {match.status === 'pending' && (
-                <button onClick={() => updateStatus(match, 'live')} className="flex-1 flex items-center justify-center gap-2 bg-primary/10 text-primary py-2 rounded-xl font-bold text-sm hover:bg-primary hover:text-primary-foreground transition-all">
+                <button onClick={() => startMatch(match)} className="flex-1 flex items-center justify-center gap-2 bg-primary/10 text-primary py-2 rounded-xl font-bold text-sm hover:bg-primary hover:text-primary-foreground transition-all">
                   <Play className="w-4 h-4 fill-current" /> Start Match
                 </button>
               )}
-              {match.status === 'live' && (
-                <button onClick={() => updateStatus(match, 'finished')} className="flex-1 flex items-center justify-center gap-2 bg-primary/10 text-primary py-2 rounded-xl font-bold text-sm hover:bg-primary hover:text-primary-foreground transition-all">
-                  <Check className="w-4 h-4" /> End Match
+              {match.status === 'live' && match.half === 'first' && (
+                <button onClick={() => startSecondHalf(match)} className="flex-1 flex items-center justify-center gap-2 bg-arena-blue/10 text-arena-blue py-2 rounded-xl font-bold text-sm hover:bg-arena-blue hover:text-white transition-all">
+                  <Pause className="w-4 h-4" /> Half Time → 2nd Half
                 </button>
+              )}
+              {match.status === 'live' && (
+                <>
+                  <button onClick={() => endMatch(match)} className="flex-1 flex items-center justify-center gap-2 bg-primary/10 text-primary py-2 rounded-xl font-bold text-sm hover:bg-primary hover:text-primary-foreground transition-all">
+                    <Check className="w-4 h-4" /> End Match
+                  </button>
+                  {onRecordSubstitution && (
+                    <>
+                      <button onClick={() => setSubContext({ match, teamId: teamA.id, step: 'out' })} className="flex items-center justify-center gap-1 bg-secondary text-secondary-foreground py-2 px-3 rounded-xl font-bold text-xs hover:bg-accent transition-all">
+                        <ArrowRightLeft className="w-3 h-3" /> Sub {teamA.name.slice(0,3)}
+                      </button>
+                      <button onClick={() => setSubContext({ match, teamId: teamB.id, step: 'out' })} className="flex items-center justify-center gap-1 bg-secondary text-secondary-foreground py-2 px-3 rounded-xl font-bold text-xs hover:bg-accent transition-all">
+                        <ArrowRightLeft className="w-3 h-3" /> Sub {teamB.name.slice(0,3)}
+                      </button>
+                    </>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -216,6 +363,33 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
                 <button key={player.id} onClick={() => handleRecordGoal(player.id)} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors text-left">
                   <img src={player.photoUrl || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop"} className="w-10 h-10 rounded-full object-cover border border-secondary" alt={player.name} />
                   <span className="font-bold text-secondary-foreground">{player.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Substitution Modal */}
+      {subContext && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-background/90 backdrop-blur-md">
+          <div className="glass-card w-full max-w-md rounded-3xl p-6 border border-arena-blue/20 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-black text-foreground flex items-center gap-2">
+                <ArrowRightLeft className="w-6 h-6 text-arena-blue" />
+                {subContext.step === 'out' ? 'Select Player OUT' : 'Select Player IN'}
+              </h3>
+              <button onClick={() => setSubContext(null)} className="p-2 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {teams.find(t => t.id === subContext.teamId)?.players
+                .filter(p => subContext.step === 'in' ? p.id !== subContext.playerOutId : true)
+                .map(player => (
+                <button key={player.id} onClick={() => handleSubstitution(player.id)} className={`w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors text-left ${subContext.step === 'out' ? 'hover:bg-arena-red/10' : 'hover:bg-primary/10'}`}>
+                  <img src={player.photoUrl || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop"} className="w-10 h-10 rounded-full object-cover border border-secondary" alt={player.name} />
+                  <span className="font-bold text-secondary-foreground">{player.name}</span>
+                  {subContext.step === 'out' && <span className="ml-auto text-xs text-arena-red">OUT</span>}
+                  {subContext.step === 'in' && <span className="ml-auto text-xs text-primary">IN</span>}
                 </button>
               ))}
             </div>

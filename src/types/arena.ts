@@ -30,6 +30,16 @@ export interface MatchEvent {
   timestamp: number;
 }
 
+export interface Substitution {
+  id: string;
+  matchId: string;
+  teamId: string;
+  playerOutId: string;
+  playerInId: string;
+  minute: number;
+  half: 'first' | 'second';
+}
+
 export interface Match {
   id: string;
   teamAId: string;
@@ -40,6 +50,9 @@ export interface Match {
   events: MatchEvent[];
   aiSummary?: string;
   phase?: 'group' | 'semifinal' | 'final';
+  startedAt?: string;
+  half?: 'first' | 'second' | 'finished';
+  substitutions?: Substitution[];
 }
 
 export type AppView = 'dashboard' | 'standings' | 'teams' | 'matches' | 'stats' | 'player';
