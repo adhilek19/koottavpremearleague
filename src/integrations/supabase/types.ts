@@ -63,6 +63,63 @@ export type Database = {
           },
         ]
       }
+      match_stats: {
+        Row: {
+          corners: number
+          created_at: string
+          fouls: number
+          id: string
+          match_id: string
+          possession: number
+          red_cards: number
+          shots_on_target: number
+          team_id: string
+          updated_at: string
+          yellow_cards: number
+        }
+        Insert: {
+          corners?: number
+          created_at?: string
+          fouls?: number
+          id?: string
+          match_id: string
+          possession?: number
+          red_cards?: number
+          shots_on_target?: number
+          team_id: string
+          updated_at?: string
+          yellow_cards?: number
+        }
+        Update: {
+          corners?: number
+          created_at?: string
+          fouls?: number
+          id?: string
+          match_id?: string
+          possession?: number
+          red_cards?: number
+          shots_on_target?: number
+          team_id?: string
+          updated_at?: string
+          yellow_cards?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_stats_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_stats_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           created_at: string
