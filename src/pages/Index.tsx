@@ -32,6 +32,8 @@ const Index = () => {
     recordSubstitution,
     deleteMatch,
     resetTournament,
+    updateMatchStats,
+    initMatchStats,
     allPlayers
   } = useArenaData();
 
@@ -159,7 +161,7 @@ const Index = () => {
           {view === 'dashboard' && <Dashboard teams={teams} matches={matches} setView={setView} isAdmin={isAdmin} />}
           {view === 'standings' && <Standings teams={teams} />}
           {view === 'teams' && <TeamList teams={teams} onUpdatePlayer={updatePlayer} onTransferPlayer={transferPlayer} onUpdateTeam={updateTeam} isAdmin={isAdmin} onPlayerClick={navigateToPlayer} onAddTeam={addTeam} onDeleteTeam={deleteTeam} />}
-          {view === 'matches' && <MatchList matches={matches} teams={teams} onUpdateMatch={handleUpdateMatch} onAddMatch={addMatch} onDeleteMatch={deleteMatch} isAdmin={isAdmin} onRecordGoal={handleRecordGoal} onRecordSubstitution={recordSubstitution} />}
+          {view === 'matches' && <MatchList matches={matches} teams={teams} onUpdateMatch={handleUpdateMatch} onAddMatch={addMatch} onDeleteMatch={deleteMatch} isAdmin={isAdmin} onRecordGoal={handleRecordGoal} onRecordSubstitution={recordSubstitution} onUpdateMatchStats={updateMatchStats} onInitMatchStats={initMatchStats} />}
           {view === 'stats' && <Stats players={allPlayers} teams={teams} matches={matches} onPlayerClick={navigateToPlayer} />}
           {view === 'player' && selectedPlayerId && (
             <PlayerProfile player={allPlayers.find(p => p.id === selectedPlayerId)!} team={teams.find(t => t.id === allPlayers.find(p => p.id === selectedPlayerId)?.teamId)} matches={matches} onBack={() => setView('teams')} />

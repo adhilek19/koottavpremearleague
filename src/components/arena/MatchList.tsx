@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Match, Team, Player } from '@/types/arena';
-import { Plus, Check, Clock, Play, Users, Calendar, Trash2, Target, X, Swords, Trophy, Timer, ArrowRightLeft, Pause } from 'lucide-react';
+import { Match, Team, Player, MatchStats } from '@/types/arena';
+import { Plus, Check, Clock, Play, Users, Calendar, Trash2, Target, X, Swords, Trophy, Timer, ArrowRightLeft, Pause, BarChart3, TrendingUp, AlertTriangle, Flag, Square } from 'lucide-react';
 
 interface MatchListProps {
   matches: Match[];
@@ -10,10 +10,12 @@ interface MatchListProps {
   onDeleteMatch: (matchId: string) => void;
   onRecordGoal: (matchId: string, playerId: string, teamId: string, match: Match) => void;
   onRecordSubstitution?: (matchId: string, teamId: string, playerOutId: string, playerInId: string, minute: number, half: 'first' | 'second') => void;
+  onUpdateMatchStats?: (matchId: string, teamId: string, stats: Partial<MatchStats>) => void;
+  onInitMatchStats?: (matchId: string, teamAId: string, teamBId: string) => void;
   isAdmin: boolean;
 }
 
-const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, onRecordGoal, onRecordSubstitution, isAdmin }: MatchListProps) => {
+const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, onRecordGoal, onRecordSubstitution, onUpdateMatchStats, onInitMatchStats, isAdmin }: MatchListProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [selectedA, setSelectedA] = useState('');
   const [selectedB, setSelectedB] = useState('');
@@ -21,6 +23,7 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
   const [scoringContext, setScoringContext] = useState<{ match: Match; teamId: string } | null>(null);
   const [subContext, setSubContext] = useState<{ match: Match; teamId: string; step: 'out' | 'in'; playerOutId?: string } | null>(null);
   const [matchTimers, setMatchTimers] = useState<Record<string, number>>({});
+  const [statsContext, setStatsContext] = useState<{ match: Match } | null>(null);
 
   // Timer logic for live matches
   useEffect(() => {
@@ -64,6 +67,10 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
 
   const startMatch = (match: Match) => {
     if (!isAdmin) return;
+    // Initialize match stats when starting
+    if (onInitMatchStats) {
+      onInitMatchStats(match.id, match.teamAId, match.teamBId);
+    }
     onUpdateMatch({ 
       ...match, 
       status: 'live', 
@@ -109,6 +116,27 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
         (subContext.match.half as 'first' | 'second') || 'first'
       );
       setSubContext(null);
+    }
+  };
+
+  const handleUpdateStat = async (matchId: string, teamId: string, field: keyof MatchStats, delta: number) => {
+    if (!onUpdateMatchStats) return;
+    const match = matches.find(m => m.id === matchId);
+    if (!match?.stats) return;
+    
+    const isTeamA = teamId === match.teamAId;
+    const currentStats = isTeamA ? match.stats.teamA : match.stats.teamB;
+    const otherStats = isTeamA ? match.stats.teamB : match.stats.teamA;
+    
+    let newValue = Math.max(0, (currentStats[field] as number) + delta);
+    
+    // Special handling for possession (must sum to 100)
+    if (field === 'possession') {
+      newValue = Math.min(100, Math.max(0, newValue));
+      await onUpdateMatchStats(matchId, teamId, { possession: newValue });
+      await onUpdateMatchStats(matchId, isTeamA ? match.teamBId : match.teamAId, { possession: 100 - newValue });
+    } else {
+      await onUpdateMatchStats(matchId, teamId, { [field]: newValue });
     }
   };
 
@@ -310,6 +338,64 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
             </div>
           </div>
 
+          {/* Match Statistics Display */}
+          {(match.status === 'live' || match.status === 'finished') && match.stats && (
+            <div className="mt-4 pt-4 border-t border-secondary">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <BarChart3 className="w-3.5 h-3.5" /> Match Stats
+                </h4>
+                {isAdmin && match.status === 'live' && onUpdateMatchStats && (
+                  <button onClick={() => setStatsContext({ match })} className="text-[10px] font-bold text-primary hover:underline">
+                    Edit Stats
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2">
+                {/* Possession */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold w-8 text-right" style={{ color: teamA.color }}>{match.stats.teamA.possession}%</span>
+                  <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden flex">
+                    <div className="h-full transition-all duration-300" style={{ width: `${match.stats.teamA.possession}%`, backgroundColor: teamA.color }}></div>
+                    <div className="h-full transition-all duration-300" style={{ width: `${match.stats.teamB.possession}%`, backgroundColor: teamB.color }}></div>
+                  </div>
+                  <span className="text-xs font-bold w-8" style={{ color: teamB.color }}>{match.stats.teamB.possession}%</span>
+                </div>
+                {/* Other Stats */}
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-secondary/50">
+                    <span className="text-xs font-bold" style={{ color: teamA.color }}>{match.stats.teamA.shotsOnTarget}</span>
+                    <span className="text-[9px] text-muted-foreground flex items-center gap-1"><Target className="w-3 h-3" /> Shots</span>
+                    <span className="text-xs font-bold" style={{ color: teamB.color }}>{match.stats.teamB.shotsOnTarget}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-secondary/50">
+                    <span className="text-xs font-bold" style={{ color: teamA.color }}>{match.stats.teamA.fouls}</span>
+                    <span className="text-[9px] text-muted-foreground flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Fouls</span>
+                    <span className="text-xs font-bold" style={{ color: teamB.color }}>{match.stats.teamB.fouls}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-secondary/50">
+                    <span className="text-xs font-bold" style={{ color: teamA.color }}>{match.stats.teamA.corners}</span>
+                    <span className="text-[9px] text-muted-foreground flex items-center gap-1"><Flag className="w-3 h-3" /> Corners</span>
+                    <span className="text-xs font-bold" style={{ color: teamB.color }}>{match.stats.teamB.corners}</span>
+                  </div>
+                </div>
+                {/* Cards */}
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-amber/10">
+                    <span className="text-xs font-bold text-amber">{match.stats.teamA.yellowCards}</span>
+                    <span className="text-[9px] text-amber flex items-center gap-1"><Square className="w-3 h-3 fill-amber" /> Yellow</span>
+                    <span className="text-xs font-bold text-amber">{match.stats.teamB.yellowCards}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-arena-red/10">
+                    <span className="text-xs font-bold text-arena-red">{match.stats.teamA.redCards}</span>
+                    <span className="text-[9px] text-arena-red flex items-center gap-1"><Square className="w-3 h-3 fill-arena-red" /> Red</span>
+                    <span className="text-xs font-bold text-arena-red">{match.stats.teamB.redCards}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {isAdmin && (
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-secondary">
               {match.status === 'pending' && (
@@ -393,6 +479,64 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Editor Modal */}
+      {statsContext && statsContext.match.stats && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-background/90 backdrop-blur-md">
+          <div className="glass-card w-full max-w-lg rounded-3xl p-6 border border-primary/20 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-black text-foreground flex items-center gap-2">
+                <BarChart3 className="w-6 h-6 text-primary" /> Edit Match Stats
+              </h3>
+              <button onClick={() => setStatsContext(null)} className="p-2 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+            </div>
+            
+            {(() => {
+              const teamA = teams.find(t => t.id === statsContext.match.teamAId);
+              const teamB = teams.find(t => t.id === statsContext.match.teamBId);
+              const stats = statsContext.match.stats!;
+              
+              const StatRow = ({ label, field, icon: Icon }: { label: string; field: keyof MatchStats; icon: React.ElementType }) => (
+                <div className="flex items-center gap-3 py-2">
+                  <div className="flex items-center gap-2 flex-1">
+                    <button onClick={() => handleUpdateStat(statsContext.match.id, statsContext.match.teamAId, field, -1)} className="w-7 h-7 rounded-lg bg-secondary hover:bg-destructive/20 text-secondary-foreground flex items-center justify-center font-bold">−</button>
+                    <span className="text-sm font-bold w-6 text-center" style={{ color: teamA?.color }}>{stats.teamA[field] as number}</span>
+                    <button onClick={() => handleUpdateStat(statsContext.match.id, statsContext.match.teamAId, field, 1)} className="w-7 h-7 rounded-lg bg-secondary hover:bg-primary/20 text-secondary-foreground flex items-center justify-center font-bold">+</button>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Icon className="w-4 h-4" />
+                    <span className="text-xs font-bold uppercase tracking-wide w-20 text-center">{label}</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-1 justify-end">
+                    <button onClick={() => handleUpdateStat(statsContext.match.id, statsContext.match.teamBId, field, -1)} className="w-7 h-7 rounded-lg bg-secondary hover:bg-destructive/20 text-secondary-foreground flex items-center justify-center font-bold">−</button>
+                    <span className="text-sm font-bold w-6 text-center" style={{ color: teamB?.color }}>{stats.teamB[field] as number}</span>
+                    <button onClick={() => handleUpdateStat(statsContext.match.id, statsContext.match.teamBId, field, 1)} className="w-7 h-7 rounded-lg bg-secondary hover:bg-primary/20 text-secondary-foreground flex items-center justify-center font-bold">+</button>
+                  </div>
+                </div>
+              );
+              
+              return (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                    <span style={{ color: teamA?.color }}>{teamA?.name}</span>
+                    <span style={{ color: teamB?.color }}>{teamB?.name}</span>
+                  </div>
+                  <StatRow label="Possession" field="possession" icon={TrendingUp} />
+                  <StatRow label="Shots" field="shotsOnTarget" icon={Target} />
+                  <StatRow label="Fouls" field="fouls" icon={AlertTriangle} />
+                  <StatRow label="Corners" field="corners" icon={Flag} />
+                  <StatRow label="Yellow" field="yellowCards" icon={Square} />
+                  <StatRow label="Red" field="redCards" icon={Square} />
+                </div>
+              );
+            })()}
+            
+            <button onClick={() => setStatsContext(null)} className="w-full mt-6 bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all">
+              Done
+            </button>
           </div>
         </div>
       )}

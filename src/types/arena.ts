@@ -40,6 +40,18 @@ export interface Substitution {
   half: 'first' | 'second';
 }
 
+export interface MatchStats {
+  id: string;
+  matchId: string;
+  teamId: string;
+  possession: number;
+  shotsOnTarget: number;
+  fouls: number;
+  corners: number;
+  yellowCards: number;
+  redCards: number;
+}
+
 export interface Match {
   id: string;
   teamAId: string;
@@ -53,6 +65,7 @@ export interface Match {
   startedAt?: string;
   half?: 'first' | 'second' | 'finished';
   substitutions?: Substitution[];
+  stats?: { teamA: MatchStats; teamB: MatchStats };
 }
 
 export type AppView = 'dashboard' | 'standings' | 'teams' | 'matches' | 'stats' | 'player';

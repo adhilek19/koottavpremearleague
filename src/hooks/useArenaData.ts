@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Team, Match, Player, MatchEvent, Substitution } from '@/types/arena';
+import { Team, Match, Player, MatchEvent, Substitution, MatchStats } from '@/types/arena';
 import { INITIAL_TEAMS } from '@/constants/teams';
 
 interface DbTeam {
@@ -58,6 +58,18 @@ interface DbSubstitution {
   half: string;
 }
 
+interface DbMatchStats {
+  id: string;
+  match_id: string;
+  team_id: string;
+  possession: number;
+  shots_on_target: number;
+  fouls: number;
+  corners: number;
+  yellow_cards: number;
+  red_cards: number;
+}
+
 export const useArenaData = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -75,12 +87,13 @@ export const useArenaData = () => {
   // Fetch all data
   const fetchData = useCallback(async () => {
     try {
-      const [teamsRes, playersRes, matchesRes, eventsRes, subsRes] = await Promise.all([
+      const [teamsRes, playersRes, matchesRes, eventsRes, subsRes, statsRes] = await Promise.all([
         supabase.from('teams').select('*'),
         supabase.from('players').select('*'),
         supabase.from('matches').select('*').order('created_at', { ascending: false }),
         supabase.from('match_events').select('*'),
-        supabase.from('substitutions').select('*')
+        supabase.from('substitutions').select('*'),
+        supabase.from('match_stats').select('*')
       ]);
 
       if (teamsRes.error) throw teamsRes.error;
@@ -88,7 +101,7 @@ export const useArenaData = () => {
       if (matchesRes.error) throw matchesRes.error;
       if (eventsRes.error) throw eventsRes.error;
       if (subsRes.error) throw subsRes.error;
-
+      if (statsRes.error) throw statsRes.error;
       // If no teams exist, seed with initial data
       if ((teamsRes.data as DbTeam[]).length === 0) {
         await seedInitialData();
@@ -101,7 +114,7 @@ export const useArenaData = () => {
       const dbMatches = matchesRes.data as DbMatch[];
       const dbEvents = eventsRes.data as DbMatchEvent[];
       const dbSubs = subsRes.data as DbSubstitution[];
-
+      const dbStats = statsRes.data as DbMatchStats[];
       const mappedTeams: Team[] = dbTeams.map(t => ({
         id: t.id,
         name: t.name,
@@ -127,36 +140,60 @@ export const useArenaData = () => {
           }))
       }));
 
-      const mappedMatches: Match[] = dbMatches.map(m => ({
-        id: m.id,
-        teamAId: m.team_a_id,
-        teamBId: m.team_b_id,
-        scoreA: m.score_a,
-        scoreB: m.score_b,
-        status: m.status as 'pending' | 'live' | 'finished',
-        phase: (m.phase as 'group' | 'semifinal' | 'final') || 'group',
-        startedAt: m.started_at || undefined,
-        half: (m.half as 'first' | 'second' | 'finished') || 'first',
-        events: dbEvents
-          .filter(e => e.match_id === m.id)
-          .map(e => ({
-            type: e.event_type as 'goal' | 'assist',
-            playerId: e.player_id,
-            teamId: e.team_id,
-            timestamp: new Date(e.created_at).getTime()
-          })),
-        substitutions: dbSubs
-          .filter(s => s.match_id === m.id)
-          .map(s => ({
+      const mappedMatches: Match[] = dbMatches.map(m => {
+        const teamAStats = dbStats.find(s => s.match_id === m.id && s.team_id === m.team_a_id);
+        const teamBStats = dbStats.find(s => s.match_id === m.id && s.team_id === m.team_b_id);
+        
+        const mapStats = (s: DbMatchStats | undefined): MatchStats | undefined => {
+          if (!s) return undefined;
+          return {
             id: s.id,
             matchId: s.match_id,
             teamId: s.team_id,
-            playerOutId: s.player_out_id,
-            playerInId: s.player_in_id,
-            minute: s.minute,
-            half: s.half as 'first' | 'second'
-          }))
-      }));
+            possession: s.possession,
+            shotsOnTarget: s.shots_on_target,
+            fouls: s.fouls,
+            corners: s.corners,
+            yellowCards: s.yellow_cards,
+            redCards: s.red_cards
+          };
+        };
+
+        return {
+          id: m.id,
+          teamAId: m.team_a_id,
+          teamBId: m.team_b_id,
+          scoreA: m.score_a,
+          scoreB: m.score_b,
+          status: m.status as 'pending' | 'live' | 'finished',
+          phase: (m.phase as 'group' | 'semifinal' | 'final') || 'group',
+          startedAt: m.started_at || undefined,
+          half: (m.half as 'first' | 'second' | 'finished') || 'first',
+          events: dbEvents
+            .filter(e => e.match_id === m.id)
+            .map(e => ({
+              type: e.event_type as 'goal' | 'assist',
+              playerId: e.player_id,
+              teamId: e.team_id,
+              timestamp: new Date(e.created_at).getTime()
+            })),
+          substitutions: dbSubs
+            .filter(s => s.match_id === m.id)
+            .map(s => ({
+              id: s.id,
+              matchId: s.match_id,
+              teamId: s.team_id,
+              playerOutId: s.player_out_id,
+              playerInId: s.player_in_id,
+              minute: s.minute,
+              half: s.half as 'first' | 'second'
+            })),
+          stats: teamAStats && teamBStats ? {
+            teamA: mapStats(teamAStats)!,
+            teamB: mapStats(teamBStats)!
+          } : undefined
+        };
+      });
 
       // Check for new events (goals, match starts)
       checkForNewEvents(mappedMatches, mappedTeams);
@@ -240,6 +277,7 @@ export const useArenaData = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'match_events' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'substitutions' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_stats' }, () => fetchData())
       .subscribe();
 
     return () => {
@@ -390,7 +428,41 @@ export const useArenaData = () => {
     await supabase.from('matches').delete().eq('id', matchId);
   };
 
+  const updateMatchStats = async (matchId: string, teamId: string, stats: Partial<MatchStats>) => {
+    const existingStats = await supabase.from('match_stats').select('*').eq('match_id', matchId).eq('team_id', teamId).single();
+    
+    if (existingStats.data) {
+      await supabase.from('match_stats').update({
+        possession: stats.possession,
+        shots_on_target: stats.shotsOnTarget,
+        fouls: stats.fouls,
+        corners: stats.corners,
+        yellow_cards: stats.yellowCards,
+        red_cards: stats.redCards
+      }).eq('id', existingStats.data.id);
+    } else {
+      await supabase.from('match_stats').insert({
+        match_id: matchId,
+        team_id: teamId,
+        possession: stats.possession ?? 50,
+        shots_on_target: stats.shotsOnTarget ?? 0,
+        fouls: stats.fouls ?? 0,
+        corners: stats.corners ?? 0,
+        yellow_cards: stats.yellowCards ?? 0,
+        red_cards: stats.redCards ?? 0
+      });
+    }
+  };
+
+  const initMatchStats = async (matchId: string, teamAId: string, teamBId: string) => {
+    await Promise.all([
+      supabase.from('match_stats').insert({ match_id: matchId, team_id: teamAId, possession: 50, shots_on_target: 0, fouls: 0, corners: 0, yellow_cards: 0, red_cards: 0 }),
+      supabase.from('match_stats').insert({ match_id: matchId, team_id: teamBId, possession: 50, shots_on_target: 0, fouls: 0, corners: 0, yellow_cards: 0, red_cards: 0 })
+    ]);
+  };
+
   const resetTournament = async () => {
+    await supabase.from('match_stats').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('substitutions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('match_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -415,6 +487,8 @@ export const useArenaData = () => {
     recordSubstitution,
     deleteMatch,
     resetTournament,
+    updateMatchStats,
+    initMatchStats,
     allPlayers: teams.flatMap(t => t.players)
   };
 };
