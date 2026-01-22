@@ -142,7 +142,7 @@ const Index = () => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto relative pb-24 lg:pb-0 h-screen">
+      <main className="flex-1 overflow-y-auto relative pb-28 lg:pb-0 h-screen">
         {/* Admin Sync Header */}
         {isAdmin && (
           <div className="sticky top-0 z-[50] bg-primary/10 backdrop-blur-md border-b border-primary/30 px-8 py-2.5 flex items-center justify-between text-primary text-[10px] font-black uppercase tracking-[0.2em]">
@@ -168,19 +168,39 @@ const Index = () => {
 
       <AdminLogin isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} onLogin={(p) => { if(p==='admin123') { setIsAdmin(true); return true; } return false; }} />
 
-      {/* Mobile Sticky Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 glass-card border-t border-secondary p-2 flex justify-around items-center z-[100] backdrop-blur-2xl">
-        {navItems.map(item => (
-          <button key={item.id} onClick={() => setView(item.id as AppView)} className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all ${view === item.id ? 'text-primary' : 'text-muted-foreground'}`}>
-            <item.icon className="w-5 h-5" />
-            <span className="text-[10px] font-black uppercase tracking-tighter">{item.label}</span>
-            {item.id === 'matches' && matches.some(m => m.status === 'live') && <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-arena-red border-2 border-card animate-pulse"></span>}
+      {/* Mobile Sticky Navigation - Improved touch targets */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 glass-card border-t border-secondary safe-area-bottom z-[100] backdrop-blur-2xl">
+        <div className="flex justify-around items-stretch px-2 py-1">
+          {navItems.map(item => (
+            <button 
+              key={item.id} 
+              onClick={() => setView(item.id as AppView)} 
+              className={`relative flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[56px] p-3 rounded-2xl transition-all active:scale-95 ${
+                view === item.id 
+                  ? 'text-primary bg-primary/10' 
+                  : 'text-muted-foreground active:bg-secondary/50'
+              }`}
+            >
+              <item.icon className={`w-6 h-6 ${view === item.id ? 'stroke-[2.5]' : ''}`} />
+              <span className="text-[9px] font-bold uppercase tracking-tight leading-none">{item.label}</span>
+              {item.id === 'matches' && matches.some(m => m.status === 'live') && (
+                <span className="absolute top-1 right-1 w-3 h-3 rounded-full bg-arena-red border-2 border-card animate-pulse shadow-lg shadow-arena-red/50"></span>
+              )}
+            </button>
+          ))}
+          <button 
+            onClick={() => isAdmin ? setIsAdmin(false) : setIsLoginModalOpen(true)} 
+            className={`relative flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[56px] p-3 rounded-2xl transition-all active:scale-95 ${
+              isAdmin 
+                ? 'text-primary bg-primary/10' 
+                : 'text-muted-foreground active:bg-secondary/50'
+            }`}
+          >
+            {isAdmin ? <ShieldCheck className="w-6 h-6 stroke-[2.5]" /> : <ShieldAlert className="w-6 h-6" />}
+            <span className="text-[9px] font-bold uppercase tracking-tight leading-none">{isAdmin ? 'Admin' : 'Login'}</span>
+            {isAdmin && <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>}
           </button>
-        ))}
-        <button onClick={() => isAdmin ? setIsAdmin(false) : setIsLoginModalOpen(true)} className={`flex flex-col items-center gap-1.5 p-2 rounded-xl ${isAdmin ? 'text-primary' : 'text-muted-foreground'}`}>
-          {isAdmin ? <ShieldCheck className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
-          <span className="text-[10px] font-black uppercase tracking-tighter">{isAdmin ? 'Admin' : 'Login'}</span>
-        </button>
+        </div>
       </nav>
     </div>
   );

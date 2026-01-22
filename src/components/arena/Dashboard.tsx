@@ -23,52 +23,54 @@ const Dashboard = ({ teams, matches, setView, isAdmin }: DashboardProps) => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <header className="flex flex-col gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
-              <span className="text-[10px] font-black text-primary uppercase tracking-widest">Real-time Sync Active</span>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+              <span className="text-[10px] font-black text-primary uppercase tracking-widest">Live Sync</span>
             </div>
           </div>
-          <h2 className="text-3xl font-extrabold text-foreground">Arena Dashboard</h2>
-          <p className="text-muted-foreground">8 Teams • 56 Players • Live Stats Tracking</p>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">Arena Dashboard</h2>
+          <p className="text-sm text-muted-foreground">8 Teams • 56 Players • Live Stats</p>
         </div>
-        {isAdmin && (
-          <button 
-            onClick={() => setView('matches')}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 px-6 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center gap-2 w-fit"
-          >
-            <Play className="w-5 h-5 fill-current" />
-            Manage Live Matches
-          </button>
-        )}
-        {!isAdmin && (
-          <div className="flex items-center gap-2 text-muted-foreground px-4 py-2 border border-secondary rounded-xl bg-secondary/20">
-            <Zap className="w-4 h-4 text-primary" />
-            <span className="text-xs font-bold uppercase tracking-widest">Live Spectator Mode</span>
-          </div>
-        )}
+        <div className="flex gap-3">
+          {isAdmin && (
+            <button 
+              onClick={() => setView('matches')}
+              className="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 px-6 rounded-2xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 touch-manipulation min-h-[52px]"
+            >
+              <Play className="w-5 h-5 fill-current" />
+              <span>Manage Matches</span>
+            </button>
+          )}
+          {!isAdmin && (
+            <div className="flex items-center gap-2 text-muted-foreground px-4 py-3 border border-secondary rounded-2xl bg-secondary/20">
+              <Zap className="w-4 h-4 text-primary" />
+              <span className="text-xs font-bold uppercase tracking-widest">Spectator Mode</span>
+            </div>
+          )}
+        </div>
       </header>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats Grid - Mobile optimized with 2x2 layout */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {[
-          { label: 'Total Matches', value: matches.length, icon: Clock, color: 'text-arena-blue' },
-          { label: 'Goals Scored', value: totalGoals, icon: TrendingUp, color: 'text-primary' },
-          { label: 'Live Now', value: liveMatches.length, icon: Play, color: 'text-arena-red', pulse: liveMatches.length > 0 },
-          { label: 'Total Players', value: 56, icon: Users, color: 'text-amber' },
+          { label: 'Matches', value: matches.length, icon: Clock, color: 'text-arena-blue' },
+          { label: 'Goals', value: totalGoals, icon: TrendingUp, color: 'text-primary' },
+          { label: 'Live', value: liveMatches.length, icon: Play, color: 'text-arena-red', pulse: liveMatches.length > 0 },
+          { label: 'Players', value: 56, icon: Users, color: 'text-amber' },
         ].map((stat, i) => (
-          <div key={i} className="glass-card p-6 rounded-2xl flex items-center gap-4 relative overflow-hidden">
+          <div key={i} className="glass-card p-4 md:p-6 rounded-2xl flex items-center gap-3 md:gap-4 relative overflow-hidden active:scale-[0.98] transition-transform touch-manipulation">
             {stat.pulse && (
-              <div className="absolute top-0 right-0 w-2 h-2 bg-arena-red rounded-full m-3 animate-pulse"></div>
+              <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-arena-red rounded-full m-2.5 animate-pulse shadow-lg shadow-arena-red/50"></div>
             )}
-            <div className="p-3 rounded-xl bg-secondary text-foreground">
-              <stat.icon className={`w-6 h-6 ${stat.color}`} />
+            <div className="p-2.5 md:p-3 rounded-xl bg-secondary text-foreground shrink-0">
+              <stat.icon className={`w-5 h-5 md:w-6 md:h-6 ${stat.color}`} />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-              <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] md:text-sm font-medium text-muted-foreground uppercase tracking-wider truncate">{stat.label}</p>
+              <p className="text-xl md:text-2xl font-bold text-foreground">{stat.value}</p>
             </div>
           </div>
         ))}
