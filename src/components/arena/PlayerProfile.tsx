@@ -1,5 +1,5 @@
 import { Player, Team, Match } from '@/types/arena';
-import { Target, Star, ArrowLeft, Shield, Calendar, Trophy, CircleDollarSign } from 'lucide-react';
+import { Target, Star, ArrowLeft, Shield, Calendar, Trophy, CircleDollarSign, AlertTriangle, Square } from 'lucide-react';
 
 interface PlayerProfileProps {
   player: Player;
@@ -7,6 +7,8 @@ interface PlayerProfileProps {
   matches: Match[];
   onBack: () => void;
 }
+
+const SUSPENSION_THRESHOLD = 2; // Yellow cards before suspension
 
 const PlayerProfile = ({ player, team, matches, onBack }: PlayerProfileProps) => {
   const playerMatches = matches.filter(m => 
@@ -68,6 +70,34 @@ const PlayerProfile = ({ player, team, matches, onBack }: PlayerProfileProps) =>
                   <p className="text-2xl font-black text-foreground">{player.assists}</p>
                   <p className="text-xs text-muted-foreground uppercase tracking-widest">Assists</p>
                 </div>
+                
+                {/* Card Statistics */}
+                <div className="bg-amber/10 p-4 rounded-2xl border border-amber/20">
+                  <Square className="w-6 h-6 text-amber fill-amber mx-auto mb-2" />
+                  <p className="text-2xl font-black text-amber">{player.yellowCards}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Yellow Cards</p>
+                  {player.yellowCards > 0 && (
+                    <p className="text-[10px] text-amber mt-1">
+                      {SUSPENSION_THRESHOLD - (player.yellowCards % SUSPENSION_THRESHOLD)} to suspension
+                    </p>
+                  )}
+                </div>
+                <div className="bg-arena-red/10 p-4 rounded-2xl border border-arena-red/20">
+                  <Square className="w-6 h-6 text-arena-red fill-arena-red mx-auto mb-2" />
+                  <p className="text-2xl font-black text-arena-red">{player.redCards}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Red Cards</p>
+                </div>
+
+                {/* Suspension Warning */}
+                {player.suspendedUntilMatchId && (
+                  <div className="col-span-2 bg-destructive/10 p-4 rounded-2xl border border-destructive/30 flex items-center gap-3">
+                    <AlertTriangle className="w-8 h-8 text-destructive" />
+                    <div className="text-left">
+                      <p className="font-bold text-destructive">SUSPENDED</p>
+                      <p className="text-xs text-muted-foreground">Player is suspended for the next match</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

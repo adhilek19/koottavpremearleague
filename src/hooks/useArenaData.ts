@@ -25,6 +25,9 @@ interface DbPlayer {
   team_id: string;
   photo_url: string | null;
   market_value: number | null;
+  yellow_cards: number;
+  red_cards: number;
+  suspended_until_match_id: string | null;
 }
 
 interface DbMatch {
@@ -136,7 +139,10 @@ export const useArenaData = () => {
             assists: p.assists,
             teamId: p.team_id,
             photoUrl: p.photo_url || undefined,
-            marketValue: p.market_value || undefined
+            marketValue: p.market_value || undefined,
+            yellowCards: p.yellow_cards || 0,
+            redCards: p.red_cards || 0,
+            suspendedUntilMatchId: p.suspended_until_match_id || undefined
           }))
       }));
 
@@ -429,7 +435,7 @@ export const useArenaData = () => {
   };
 
   const updateMatchStats = async (matchId: string, teamId: string, stats: Partial<MatchStats>) => {
-    const existingStats = await supabase.from('match_stats').select('*').eq('match_id', matchId).eq('team_id', teamId).single();
+    const existingStats = await supabase.from('match_stats').select('*').eq('match_id', matchId).eq('team_id', teamId).maybeSingle();
     
     if (existingStats.data) {
       await supabase.from('match_stats').update({
@@ -454,6 +460,42 @@ export const useArenaData = () => {
     }
   };
 
+  const recordPlayerCard = async (playerId: string, cardType: 'yellow' | 'red', nextMatchId?: string) => {
+    const player = teams.flatMap(t => t.players).find(p => p.id === playerId);
+    if (!player) return;
+
+    if (cardType === 'yellow') {
+      const newYellowCards = player.yellowCards + 1;
+      // Check if player should be suspended (every 2 yellow cards)
+      const shouldSuspend = newYellowCards % 2 === 0;
+      
+      await supabase.from('players').update({
+        yellow_cards: newYellowCards,
+        suspended_until_match_id: shouldSuspend && nextMatchId ? nextMatchId : player.suspendedUntilMatchId
+      }).eq('id', playerId);
+    } else {
+      // Red card - immediate suspension for next match
+      await supabase.from('players').update({
+        red_cards: player.redCards + 1,
+        suspended_until_match_id: nextMatchId || null
+      }).eq('id', playerId);
+    }
+  };
+
+  const clearPlayerSuspension = async (playerId: string) => {
+    await supabase.from('players').update({
+      suspended_until_match_id: null
+    }).eq('id', playerId);
+  };
+
+  const resetPlayerCards = async () => {
+    await supabase.from('players').update({
+      yellow_cards: 0,
+      red_cards: 0,
+      suspended_until_match_id: null
+    }).neq('id', '00000000-0000-0000-0000-000000000000');
+  };
+
   const initMatchStats = async (matchId: string, teamAId: string, teamBId: string) => {
     await Promise.all([
       supabase.from('match_stats').insert({ match_id: matchId, team_id: teamAId, possession: 50, shots_on_target: 0, fouls: 0, corners: 0, yellow_cards: 0, red_cards: 0 }),
@@ -466,6 +508,14 @@ export const useArenaData = () => {
     await supabase.from('substitutions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('match_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    // Reset player cards before deleting
+    await supabase.from('players').update({
+      yellow_cards: 0,
+      red_cards: 0,
+      suspended_until_match_id: null,
+      goals: 0,
+      assists: 0
+    }).neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('players').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('teams').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await seedInitialData();
@@ -489,6 +539,9 @@ export const useArenaData = () => {
     resetTournament,
     updateMatchStats,
     initMatchStats,
+    recordPlayerCard,
+    clearPlayerSuspension,
+    resetPlayerCards,
     allPlayers: teams.flatMap(t => t.players)
   };
 };

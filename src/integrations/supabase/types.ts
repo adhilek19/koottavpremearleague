@@ -186,8 +186,11 @@ export type Database = {
           market_value: number | null
           name: string
           photo_url: string | null
+          red_cards: number
+          suspended_until_match_id: string | null
           team_id: string
           updated_at: string
+          yellow_cards: number
         }
         Insert: {
           assists?: number
@@ -197,8 +200,11 @@ export type Database = {
           market_value?: number | null
           name: string
           photo_url?: string | null
+          red_cards?: number
+          suspended_until_match_id?: string | null
           team_id: string
           updated_at?: string
+          yellow_cards?: number
         }
         Update: {
           assists?: number
@@ -208,10 +214,20 @@ export type Database = {
           market_value?: number | null
           name?: string
           photo_url?: string | null
+          red_cards?: number
+          suspended_until_match_id?: string | null
           team_id?: string
           updated_at?: string
+          yellow_cards?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "players_suspended_until_match_id_fkey"
+            columns: ["suspended_until_match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "players_team_id_fkey"
             columns: ["team_id"]
