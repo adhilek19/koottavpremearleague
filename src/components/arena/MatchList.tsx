@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Match, Team, Player, MatchStats } from '@/types/arena';
-import { Plus, Check, Clock, Play, Users, Calendar, Trash2, Target, X, Swords, Trophy, Timer, ArrowRightLeft, Pause, BarChart3, TrendingUp, AlertTriangle, Flag, Square } from 'lucide-react';
+import { Plus, Check, Clock, Play, Users, Calendar, Trash2, Target, X, Swords, Trophy, Timer, ArrowRightLeft, Pause, BarChart3, TrendingUp, AlertTriangle, Flag, Square, ListOrdered } from 'lucide-react';
+import MatchHighlights from './MatchHighlights';
 
 interface MatchListProps {
   matches: Match[];
@@ -423,6 +424,16 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Match Highlights Feed */}
+          {(match.status === 'live' || match.status === 'finished') && (match.events.length > 0 || (match.substitutions && match.substitutions.length > 0)) && (
+            <div className="mt-4 pt-4 border-t border-secondary">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-3">
+                <ListOrdered className="w-3.5 h-3.5" /> Match Highlights
+              </h4>
+              <MatchHighlights match={match} teamA={teamA} teamB={teamB} />
             </div>
           )}
 
