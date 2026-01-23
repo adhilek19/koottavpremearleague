@@ -12,10 +12,11 @@ interface MatchListProps {
   onRecordSubstitution?: (matchId: string, teamId: string, playerOutId: string, playerInId: string, minute: number, half: 'first' | 'second') => void;
   onUpdateMatchStats?: (matchId: string, teamId: string, stats: Partial<MatchStats>) => void;
   onInitMatchStats?: (matchId: string, teamAId: string, teamBId: string) => void;
+  onRecordPlayerCard?: (playerId: string, cardType: 'yellow' | 'red', nextMatchId?: string) => void;
   isAdmin: boolean;
 }
 
-const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, onRecordGoal, onRecordSubstitution, onUpdateMatchStats, onInitMatchStats, isAdmin }: MatchListProps) => {
+const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, onRecordGoal, onRecordSubstitution, onUpdateMatchStats, onInitMatchStats, onRecordPlayerCard, isAdmin }: MatchListProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [selectedA, setSelectedA] = useState('');
   const [selectedB, setSelectedB] = useState('');
@@ -24,6 +25,7 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
   const [subContext, setSubContext] = useState<{ match: Match; teamId: string; step: 'out' | 'in'; playerOutId?: string } | null>(null);
   const [matchTimers, setMatchTimers] = useState<Record<string, number>>({});
   const [statsContext, setStatsContext] = useState<{ match: Match } | null>(null);
+  const [cardContext, setCardContext] = useState<{ match: Match; teamId: string; cardType: 'yellow' | 'red' } | null>(null);
 
   // Timer logic for live matches
   useEffect(() => {
@@ -138,6 +140,34 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
     } else {
       await onUpdateMatchStats(matchId, teamId, { [field]: newValue });
     }
+  };
+
+  const handleRecordCard = async (playerId: string) => {
+    if (!cardContext || !onRecordPlayerCard) return;
+    // Find next pending match for this team to set suspension
+    const nextMatch = matches.find(m => 
+      m.status === 'pending' && 
+      (m.teamAId === cardContext.teamId || m.teamBId === cardContext.teamId)
+    );
+    await onRecordPlayerCard(playerId, cardContext.cardType, nextMatch?.id);
+    
+    // Also update match stats for visual tracking
+    if (onUpdateMatchStats && cardContext.match.stats) {
+      const currentStats = cardContext.teamId === cardContext.match.teamAId 
+        ? cardContext.match.stats.teamA 
+        : cardContext.match.stats.teamB;
+      
+      if (cardContext.cardType === 'yellow') {
+        await onUpdateMatchStats(cardContext.match.id, cardContext.teamId, { 
+          yellowCards: currentStats.yellowCards + 1 
+        });
+      } else {
+        await onUpdateMatchStats(cardContext.match.id, cardContext.teamId, { 
+          redCards: currentStats.redCards + 1 
+        });
+      }
+    }
+    setCardContext(null);
   };
 
   const getSortedGroup = (group: 'A' | 'B') => {
@@ -423,6 +453,16 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
                       </button>
                     </>
                   )}
+                  {onRecordPlayerCard && (
+                    <>
+                      <button onClick={() => setCardContext({ match, teamId: teamA.id, cardType: 'yellow' })} className="flex items-center justify-center gap-1 bg-amber/10 text-amber py-2 px-3 rounded-xl font-bold text-xs hover:bg-amber/20 transition-all">
+                        <Square className="w-3 h-3 fill-amber" /> Card {teamA.name.slice(0,3)}
+                      </button>
+                      <button onClick={() => setCardContext({ match, teamId: teamB.id, cardType: 'yellow' })} className="flex items-center justify-center gap-1 bg-amber/10 text-amber py-2 px-3 rounded-xl font-bold text-xs hover:bg-amber/20 transition-all">
+                        <Square className="w-3 h-3 fill-amber" /> Card {teamB.name.slice(0,3)}
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -537,6 +577,73 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
             <button onClick={() => setStatsContext(null)} className="w-full mt-6 bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all">
               Done
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Card Modal */}
+      {cardContext && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-background/90 backdrop-blur-md">
+          <div className="glass-card w-full max-w-md rounded-3xl p-6 border border-amber/20 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-black text-foreground flex items-center gap-2">
+                <Square className={`w-6 h-6 ${cardContext.cardType === 'yellow' ? 'text-amber fill-amber' : 'text-arena-red fill-arena-red'}`} />
+                Issue {cardContext.cardType === 'yellow' ? 'Yellow' : 'Red'} Card
+              </h3>
+              <button onClick={() => setCardContext(null)} className="p-2 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+            </div>
+            
+            {/* Card Type Toggle */}
+            <div className="flex gap-2 mb-4">
+              <button 
+                onClick={() => setCardContext({ ...cardContext, cardType: 'yellow' })}
+                className={`flex-1 py-2 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                  cardContext.cardType === 'yellow' ? 'bg-amber text-black' : 'bg-amber/10 text-amber hover:bg-amber/20'
+                }`}
+              >
+                <Square className="w-4 h-4 fill-current" /> Yellow
+              </button>
+              <button 
+                onClick={() => setCardContext({ ...cardContext, cardType: 'red' })}
+                className={`flex-1 py-2 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                  cardContext.cardType === 'red' ? 'bg-arena-red text-white' : 'bg-arena-red/10 text-arena-red hover:bg-arena-red/20'
+                }`}
+              >
+                <Square className="w-4 h-4 fill-current" /> Red
+              </button>
+            </div>
+            
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {teams.find(t => t.id === cardContext.teamId)?.players.map(player => (
+                <button 
+                  key={player.id} 
+                  onClick={() => handleRecordCard(player.id)} 
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left ${
+                    cardContext.cardType === 'yellow' ? 'hover:bg-amber/10' : 'hover:bg-arena-red/10'
+                  }`}
+                >
+                  <img src={player.photoUrl || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop"} className="w-10 h-10 rounded-full object-cover border border-secondary" alt={player.name} />
+                  <div className="flex-1">
+                    <span className="font-bold text-secondary-foreground">{player.name}</span>
+                    <div className="flex items-center gap-2 text-xs mt-0.5">
+                      {player.yellowCards > 0 && (
+                        <span className="flex items-center gap-0.5 text-amber">
+                          <Square className="w-3 h-3 fill-amber" /> {player.yellowCards}
+                        </span>
+                      )}
+                      {player.redCards > 0 && (
+                        <span className="flex items-center gap-0.5 text-arena-red">
+                          <Square className="w-3 h-3 fill-arena-red" /> {player.redCards}
+                        </span>
+                      )}
+                      {player.suspendedUntilMatchId && (
+                        <span className="text-destructive font-bold">SUSPENDED</span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

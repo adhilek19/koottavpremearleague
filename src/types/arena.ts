@@ -6,6 +6,9 @@ export interface Player {
   teamId: string;
   photoUrl?: string;
   marketValue?: number;
+  yellowCards: number;
+  redCards: number;
+  suspendedUntilMatchId?: string;
 }
 
 export interface Team {

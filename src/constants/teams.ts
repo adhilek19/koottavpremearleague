@@ -28,6 +28,8 @@ export const INITIAL_TEAMS: Team[] = [
     assists: 0,
     teamId: team.id,
     photoUrl: PLAYER_PHOTOS[i % PLAYER_PHOTOS.length],
-    marketValue: Math.floor(Math.random() * 50000) + 10000
+    marketValue: Math.floor(Math.random() * 50000) + 10000,
+    yellowCards: 0,
+    redCards: 0
   }))
 }));
