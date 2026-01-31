@@ -310,6 +310,7 @@ export type Database = {
           id: string
           logo_url: string | null
           lost: number
+          manager: string | null
           name: string
           played: number
           points: number
@@ -326,6 +327,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           lost?: number
+          manager?: string | null
           name: string
           played?: number
           points?: number
@@ -342,6 +344,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           lost?: number
+          manager?: string | null
           name?: string
           played?: number
           points?: number
