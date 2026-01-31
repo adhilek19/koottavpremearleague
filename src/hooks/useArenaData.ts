@@ -8,6 +8,7 @@ interface DbTeam {
   name: string;
   color: string;
   group: string | null;
+  manager: string | null;
   played: number;
   won: number;
   drawn: number;
@@ -123,6 +124,7 @@ export const useArenaData = () => {
         name: t.name,
         color: t.color,
         group: (t.group as 'A' | 'B') || 'A',
+        manager: t.manager || undefined,
         played: t.played,
         won: t.won,
         drawn: t.drawn,
@@ -322,6 +324,7 @@ export const useArenaData = () => {
       name: updates.name,
       color: updates.color,
       group: updates.group,
+      manager: updates.manager,
       played: updates.played,
       won: updates.won,
       drawn: updates.drawn,

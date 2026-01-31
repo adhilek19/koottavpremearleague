@@ -15,7 +15,7 @@ interface TeamListProps {
 
 const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdmin, onPlayerClick, onAddTeam, onDeleteTeam }: TeamListProps) => {
   const [editingPlayer, setEditingPlayer] = useState<{id: string, name: string, photoUrl: string, marketValue: number, targetTeamId: string} | null>(null);
-  const [editingTeam, setEditingTeam] = useState<{id: string, name: string} | null>(null);
+  const [editingTeam, setEditingTeam] = useState<{id: string, name: string, manager: string} | null>(null);
   const [isAddingTeam, setIsAddingTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamColor, setNewTeamColor] = useState('#10b981');
@@ -89,7 +89,7 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
 
   const handleSaveTeam = () => {
     if (editingTeam) {
-      onUpdateTeam(editingTeam.id, { name: editingTeam.name });
+      onUpdateTeam(editingTeam.id, { name: editingTeam.name, manager: editingTeam.manager || undefined });
       setEditingTeam(null);
     }
   };
@@ -106,46 +106,60 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
   const renderTeamCard = (team: Team) => (
     <div key={team.id} className="glass-card rounded-2xl overflow-hidden flex flex-col group border-t-4" style={{ borderColor: team.color }}>
       <div className="p-6 flex-1">
-        <div className="flex items-center justify-between mb-6">
-          {editingTeam?.id === team.id ? (
-            <div className="flex items-center gap-2">
-              <input 
-                autoFocus
-                className="bg-secondary text-foreground font-bold text-lg px-2 py-1 rounded-lg border border-primary outline-none w-40"
-                value={editingTeam.name}
-                onChange={(e) => setEditingTeam({ ...editingTeam, name: e.target.value })}
-                onKeyDown={(e) => e.key === 'Enter' && handleSaveTeam()}
-                onBlur={handleSaveTeam}
-              />
-              <button onClick={handleSaveTeam} className="p-1 text-primary"><Check className="w-5 h-5" /></button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <h3 
-                className={`text-xl font-bold ${isAdmin ? 'cursor-pointer hover:text-primary' : ''}`}
-                onClick={() => isAdmin && setEditingTeam({ id: team.id, name: team.name })}
+        <div className="flex flex-col gap-2 mb-6">
+          <div className="flex items-center justify-between">
+            {editingTeam?.id === team.id ? (
+              <div className="flex flex-col gap-2">
+                <input 
+                  autoFocus
+                  placeholder="Team Name"
+                  className="bg-secondary text-foreground font-bold text-lg px-2 py-1 rounded-lg border border-primary outline-none w-48"
+                  value={editingTeam.name}
+                  onChange={(e) => setEditingTeam({ ...editingTeam, name: e.target.value })}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveTeam()}
+                />
+                <input 
+                  placeholder="Manager Name"
+                  className="bg-secondary text-foreground text-sm px-2 py-1 rounded-lg border border-secondary outline-none w-48 focus:border-primary"
+                  value={editingTeam.manager}
+                  onChange={(e) => setEditingTeam({ ...editingTeam, manager: e.target.value })}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveTeam()}
+                />
+                <button onClick={handleSaveTeam} className="self-start p-1 text-primary"><Check className="w-5 h-5" /></button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h3 
+                  className={`text-xl font-bold ${isAdmin ? 'cursor-pointer hover:text-primary' : ''}`}
+                  onClick={() => isAdmin && setEditingTeam({ id: team.id, name: team.name, manager: team.manager || '' })}
+                >
+                  {team.name}
+                </h3>
+                {isAdmin && (
+                  <button onClick={() => setEditingTeam({ id: team.id, name: team.name, manager: team.manager || '' })} className="p-1 text-muted-foreground hover:text-foreground transition-opacity">
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            )}
+            {isAdmin ? (
+              <button 
+                onClick={() => onDeleteTeam(team.id)}
+                className="p-2 text-muted-foreground hover:text-destructive transition-colors bg-secondary/50 rounded-lg"
+                title="Delete Team"
               >
-                {team.name}
-              </h3>
-              {isAdmin && (
-                <button onClick={() => setEditingTeam({ id: team.id, name: team.name })} className="p-1 text-muted-foreground hover:text-foreground transition-opacity">
-                  <Edit2 className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          )}
-          {isAdmin ? (
-            <button 
-              onClick={() => onDeleteTeam(team.id)}
-              className="p-2 text-muted-foreground hover:text-destructive transition-colors bg-secondary/50 rounded-lg"
-              title="Delete Team"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          ) : (
-            <span className="text-xs bg-secondary text-muted-foreground px-2 py-1 rounded-md uppercase font-bold tracking-widest">
-              Group {team.group || 'A'}
-            </span>
+                <Trash2 className="w-4 h-4" />
+              </button>
+            ) : (
+              <span className="text-xs bg-secondary text-muted-foreground px-2 py-1 rounded-md uppercase font-bold tracking-widest">
+                Group {team.group || 'A'}
+              </span>
+            )}
+          </div>
+          {team.manager && (
+            <p className="text-xs text-muted-foreground font-medium">
+              Manager: <span className="text-foreground">{team.manager}</span>
+            </p>
           )}
         </div>
         
