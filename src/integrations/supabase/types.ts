@@ -304,6 +304,7 @@ export type Database = {
           color: string
           created_at: string
           drawn: number
+          formation: string | null
           ga: number
           gf: number
           group: string | null
@@ -321,6 +322,7 @@ export type Database = {
           color?: string
           created_at?: string
           drawn?: number
+          formation?: string | null
           ga?: number
           gf?: number
           group?: string | null
@@ -338,6 +340,7 @@ export type Database = {
           color?: string
           created_at?: string
           drawn?: number
+          formation?: string | null
           ga?: number
           gf?: number
           group?: string | null

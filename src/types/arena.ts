@@ -11,12 +11,15 @@ export interface Player {
   suspendedUntilMatchId?: string;
 }
 
+export type Formation = '1-2-1' | '2-1-1' | '1-1-2' | '2-2' | '1-3' | '3-1';
+
 export interface Team {
   id: string;
   name: string;
   color: string;
   group?: 'A' | 'B';
   manager?: string;
+  formation?: Formation;
   players: Player[];
   played: number;
   won: number;
