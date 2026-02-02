@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Team, Match, Player, MatchEvent, Substitution, MatchStats } from '@/types/arena';
+import { Team, Match, Player, MatchEvent, Substitution, MatchStats, Formation } from '@/types/arena';
 import { INITIAL_TEAMS } from '@/constants/teams';
 
 interface DbTeam {
@@ -9,6 +9,7 @@ interface DbTeam {
   color: string;
   group: string | null;
   manager: string | null;
+  formation: string | null;
   played: number;
   won: number;
   drawn: number;
@@ -125,6 +126,7 @@ export const useArenaData = () => {
         color: t.color,
         group: (t.group as 'A' | 'B') || 'A',
         manager: t.manager || undefined,
+        formation: (t.formation as Formation) || '1-2-1',
         played: t.played,
         won: t.won,
         drawn: t.drawn,
@@ -325,6 +327,7 @@ export const useArenaData = () => {
       color: updates.color,
       group: updates.group,
       manager: updates.manager,
+      formation: updates.formation,
       played: updates.played,
       won: updates.won,
       drawn: updates.drawn,

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
-import { Team, Player } from '@/types/arena';
-import { Edit2, Save, X, ExternalLink, Plus, Trash2, Camera, Repeat, Check, Upload, Link, CircleDollarSign } from 'lucide-react';
+import { Team, Player, Formation } from '@/types/arena';
+import { Edit2, Save, X, ExternalLink, Plus, Trash2, Camera, Repeat, Check, Upload, Link, CircleDollarSign, Users } from 'lucide-react';
+import FormationDisplay from './FormationDisplay';
 
 interface TeamListProps {
   teams: Team[];
@@ -15,7 +16,8 @@ interface TeamListProps {
 
 const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdmin, onPlayerClick, onAddTeam, onDeleteTeam }: TeamListProps) => {
   const [editingPlayer, setEditingPlayer] = useState<{id: string, name: string, photoUrl: string, marketValue: number, targetTeamId: string} | null>(null);
-  const [editingTeam, setEditingTeam] = useState<{id: string, name: string, manager: string} | null>(null);
+  const [editingTeam, setEditingTeam] = useState<{id: string, name: string, manager: string, formation: Formation} | null>(null);
+  const [showFormation, setShowFormation] = useState<string | null>(null);
   const [isAddingTeam, setIsAddingTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamColor, setNewTeamColor] = useState('#10b981');
@@ -89,7 +91,11 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
 
   const handleSaveTeam = () => {
     if (editingTeam) {
-      onUpdateTeam(editingTeam.id, { name: editingTeam.name, manager: editingTeam.manager || undefined });
+      onUpdateTeam(editingTeam.id, { 
+        name: editingTeam.name, 
+        manager: editingTeam.manager || undefined,
+        formation: editingTeam.formation 
+      });
       setEditingTeam(null);
     }
   };
@@ -125,18 +131,30 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
                   onChange={(e) => setEditingTeam({ ...editingTeam, manager: e.target.value })}
                   onKeyDown={(e) => e.key === 'Enter' && handleSaveTeam()}
                 />
+                <select
+                  className="bg-secondary text-foreground text-sm px-2 py-1 rounded-lg border border-secondary outline-none w-48 focus:border-primary"
+                  value={editingTeam.formation}
+                  onChange={(e) => setEditingTeam({ ...editingTeam, formation: e.target.value as Formation })}
+                >
+                  <option value="1-2-1">1-2-1 (Diamond)</option>
+                  <option value="2-1-1">2-1-1 (Defensive)</option>
+                  <option value="1-1-2">1-1-2 (Attacking)</option>
+                  <option value="2-2">2-2 (Box)</option>
+                  <option value="1-3">1-3 (Ultra Attack)</option>
+                  <option value="3-1">3-1 (Ultra Defense)</option>
+                </select>
                 <button onClick={handleSaveTeam} className="self-start p-1 text-primary"><Check className="w-5 h-5" /></button>
               </div>
             ) : (
               <div className="flex items-center gap-2">
                 <h3 
                   className={`text-xl font-bold ${isAdmin ? 'cursor-pointer hover:text-primary' : ''}`}
-                  onClick={() => isAdmin && setEditingTeam({ id: team.id, name: team.name, manager: team.manager || '' })}
+                  onClick={() => isAdmin && setEditingTeam({ id: team.id, name: team.name, manager: team.manager || '', formation: team.formation || '1-2-1' })}
                 >
                   {team.name}
                 </h3>
                 {isAdmin && (
-                  <button onClick={() => setEditingTeam({ id: team.id, name: team.name, manager: team.manager || '' })} className="p-1 text-muted-foreground hover:text-foreground transition-opacity">
+                  <button onClick={() => setEditingTeam({ id: team.id, name: team.name, manager: team.manager || '', formation: team.formation || '1-2-1' })} className="p-1 text-muted-foreground hover:text-foreground transition-opacity">
                     <Edit2 className="w-3 h-3" />
                   </button>
                 )}
@@ -161,7 +179,30 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
               Manager: <span className="text-foreground">{team.manager}</span>
             </p>
           )}
+          <button
+            onClick={() => setShowFormation(showFormation === team.id ? null : team.id)}
+            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+              showFormation === team.id 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>{team.formation || '1-2-1'} Formation</span>
+          </button>
         </div>
+
+        {/* Formation Display */}
+        {showFormation === team.id && (
+          <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <FormationDisplay 
+              players={team.players}
+              formation={team.formation || '1-2-1'}
+              teamColor={team.color}
+              onPlayerClick={onPlayerClick}
+            />
+          </div>
+        )}
         
         <div className="space-y-2">
           {team.players.map((player, i) => (
