@@ -8,6 +8,8 @@ interface DashboardProps {
   isAdmin: boolean;
 }
 
+import kplLogo from '@/assets/kpl-logo.png';
+
 const Dashboard = ({ teams, matches, setView, isAdmin }: DashboardProps) => {
   const liveMatches = matches.filter(m => m.status === 'live');
   const totalGoals = teams.reduce((acc, t) => acc + t.gf, 0);
@@ -23,6 +25,24 @@ const Dashboard = ({ teams, matches, setView, isAdmin }: DashboardProps) => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Welcome Banner */}
+      <div className="glass-card rounded-3xl p-6 md:p-8 border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-arena-blue/5">
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          <img 
+            src={kplLogo} 
+            alt="Koottavil Star Arts & Sports Club" 
+            className="w-24 h-24 md:w-32 md:h-32 object-contain rounded-2xl bg-white p-2 shadow-lg"
+          />
+          <div className="text-center md:text-left">
+            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">Koottavil Star Arts & Sports Club Presents</p>
+            <h1 className="text-2xl md:text-4xl font-black text-foreground tracking-tight mb-2">
+              Welcome to Koottav Premier League
+            </h1>
+            <p className="text-lg md:text-xl font-bold text-primary">Season 3</p>
+          </div>
+        </div>
+      </div>
+
       <header className="flex flex-col gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
