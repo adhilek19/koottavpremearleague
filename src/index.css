@@ -8,82 +8,82 @@
 
 @layer base {
   :root {
-    /* Deep navy/slate background palette */
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    /* Deep purple/dark background palette */
+    --background: 270 50% 5%;
+    --foreground: 180 100% 95%;
 
-    --card: 217 33% 12%;
-    --card-foreground: 210 40% 98%;
+    --card: 270 40% 10%;
+    --card-foreground: 180 100% 95%;
 
-    --popover: 217 33% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 270 40% 10%;
+    --popover-foreground: 180 100% 95%;
 
-    /* Primary emerald green accent */
-    --primary: 160 84% 39%;
+    /* Primary electric purple accent */
+    --primary: 280 100% 60%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary slate tones */
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary deep purple tones */
+    --secondary: 270 40% 15%;
+    --secondary-foreground: 180 100% 95%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 270 40% 15%;
+    --muted-foreground: 270 30% 60%;
 
-    --accent: 217 33% 22%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 185 100% 50%;
+    --accent-foreground: 270 50% 5%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 180 100% 95%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 160 84% 39%;
+    --border: 270 40% 18%;
+    --input: 270 40% 15%;
+    --ring: 280 100% 60%;
 
     --radius: 0.75rem;
 
     /* Extended palette for sports theme */
     --amber: 45 93% 58%;
     --amber-foreground: 0 0% 0%;
-    --blue: 217 91% 60%;
-    --blue-foreground: 0 0% 100%;
+    --blue: 185 100% 50%;
+    --blue-foreground: 0 0% 0%;
     --red: 0 84% 60%;
     --red-foreground: 0 0% 100%;
 
     /* Glass card effect */
-    --glass-bg: 217 33% 17% / 0.7;
-    --glass-border: 0 0% 100% / 0.1;
+    --glass-bg: 270 40% 12% / 0.8;
+    --glass-border: 185 100% 50% / 0.15;
 
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 215 20% 65%;
-    --sidebar-primary: 160 84% 39%;
+    --sidebar-background: 270 50% 5%;
+    --sidebar-foreground: 270 30% 60%;
+    --sidebar-primary: 280 100% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 160 84% 39%;
+    --sidebar-accent: 270 40% 15%;
+    --sidebar-accent-foreground: 180 100% 95%;
+    --sidebar-border: 270 40% 18%;
+    --sidebar-ring: 280 100% 60%;
   }
 
   /* No light mode - this is a dark-first sports theme */
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
-    --card: 217 33% 12%;
-    --card-foreground: 210 40% 98%;
-    --popover: 217 33% 12%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 160 84% 39%;
+    --background: 270 50% 5%;
+    --foreground: 180 100% 95%;
+    --card: 270 40% 10%;
+    --card-foreground: 180 100% 95%;
+    --popover: 270 40% 10%;
+    --popover-foreground: 180 100% 95%;
+    --primary: 280 100% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 22%;
-    --accent-foreground: 210 40% 98%;
+    --secondary: 270 40% 15%;
+    --secondary-foreground: 180 100% 95%;
+    --muted: 270 40% 15%;
+    --muted-foreground: 270 30% 60%;
+    --accent: 185 100% 50%;
+    --accent-foreground: 270 50% 5%;
     --destructive: 0 62% 30%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 160 84% 39%;
+    --destructive-foreground: 180 100% 95%;
+    --border: 270 40% 18%;
+    --input: 270 40% 15%;
+    --ring: 280 100% 60%;
   }
 }
 
