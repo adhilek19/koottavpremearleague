@@ -146,7 +146,7 @@ const Index = () => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto relative pb-28 lg:pb-0 h-screen">
+      <main className="flex-1 overflow-y-auto relative pb-28 lg:pb-0 h-screen glow-ambient">
         {/* Admin Sync Header */}
         {isAdmin && (
           <div className="sticky top-0 z-[50] bg-primary/10 backdrop-blur-md border-b border-primary/30 px-8 py-2.5 flex items-center justify-between text-primary text-[10px] font-black uppercase tracking-[0.2em]">

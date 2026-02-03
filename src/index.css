@@ -136,6 +136,40 @@
     border: 1px solid hsl(var(--glass-border));
   }
 
+  /* Ambient glow background effect */
+  .glow-ambient {
+    position: relative;
+  }
+  .glow-ambient::before {
+    content: '';
+    position: absolute;
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 40%;
+    background: radial-gradient(ellipse at center, hsl(280 100% 60% / 0.15) 0%, hsl(185 100% 50% / 0.08) 40%, transparent 70%);
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glow-ambient::after {
+    content: '';
+    position: absolute;
+    bottom: 20%;
+    right: 10%;
+    width: 40%;
+    height: 30%;
+    background: radial-gradient(ellipse at center, hsl(185 100% 50% / 0.12) 0%, transparent 60%);
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glow-ambient > * {
+    position: relative;
+    z-index: 1;
+  }
+
   /* Animate in utilities */
   .animate-in {
     animation: animateIn 0.5s ease-out forwards;
