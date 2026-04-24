@@ -81,11 +81,11 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-background text-foreground overflow-hidden font-inter">
+    <div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-clip lg:flex-row font-inter">
       {/* Real-time Global Notification Overlay */}
       {notification && (
-        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[1000] animate-in slide-in-from-top-6 fade-in duration-500 pointer-events-none w-[90%] max-w-md">
-          <div className={`px-6 py-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-2 flex items-center gap-5 backdrop-blur-xl ${
+        <div className="fixed top-4 md:top-8 left-1/2 -translate-x-1/2 z-[1000] animate-in slide-in-from-top-6 fade-in duration-500 pointer-events-none w-[calc(100%-1.5rem)] max-w-md">
+          <div className={`px-4 py-4 md:px-6 md:py-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-2 flex items-center gap-3 md:gap-5 backdrop-blur-xl ${
             notification.type === 'goal' ? 'bg-primary/90 border-primary text-primary-foreground' : 
             notification.type === 'start' ? 'bg-arena-blue/90 border-arena-blue text-white' : 'bg-secondary/90 border-secondary'
           }`}>
@@ -146,19 +146,19 @@ const Index = () => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto relative pb-28 lg:pb-0 h-screen glow-ambient">
+      <main className="relative flex-1 overflow-y-auto pb-28 lg:pb-0 min-h-screen lg:h-screen glow-ambient">
         {/* Admin Sync Header */}
         {isAdmin && (
-          <div className="sticky top-0 z-[50] bg-primary/10 backdrop-blur-md border-b border-primary/30 px-8 py-2.5 flex items-center justify-between text-primary text-[10px] font-black uppercase tracking-[0.2em]">
-            <div className="flex items-center gap-2">
+            <div className="sticky top-0 z-[50] bg-primary/10 backdrop-blur-md border-b border-primary/30 px-4 py-2.5 md:px-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-primary text-[10px] font-black uppercase tracking-[0.2em]">
+              <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
               Live Broadcast Control
             </div>
-            <button onClick={resetTournament} className="bg-destructive/20 text-destructive px-4 py-1.5 rounded-lg hover:bg-destructive/30 transition-colors font-bold tracking-normal border border-destructive/20">Reset Season</button>
+            <button onClick={resetTournament} className="w-full sm:w-auto bg-destructive/20 text-destructive px-4 py-1.5 rounded-lg hover:bg-destructive/30 transition-colors font-bold tracking-normal border border-destructive/20">Reset Season</button>
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto p-4 md:p-10">
+        <div className="max-w-7xl mx-auto w-full p-4 md:p-10">
           {view === 'dashboard' && <Dashboard teams={teams} matches={matches} setView={setView} isAdmin={isAdmin} />}
           {view === 'standings' && <Standings teams={teams} />}
           {view === 'teams' && <TeamList teams={teams} onUpdatePlayer={updatePlayer} onTransferPlayer={transferPlayer} onUpdateTeam={updateTeam} isAdmin={isAdmin} onPlayerClick={navigateToPlayer} onAddTeam={addTeam} onDeleteTeam={deleteTeam} />}

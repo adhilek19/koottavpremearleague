@@ -30,30 +30,31 @@ const Standings = ({ teams }: StandingsProps) => {
         </div>
       </div>
       <div className="glass-card rounded-2xl overflow-hidden border border-secondary/50 shadow-xl">
-        <table className="w-full text-left">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[40rem] text-left">
           <thead className="bg-secondary/50 text-muted-foreground text-[10px] uppercase font-black tracking-widest">
             <tr>
-              <th className="px-4 py-4 w-10">#</th>
-              <th className="px-4 py-4">Team</th>
-              <th className="px-4 py-4 text-center">P</th>
-              <th className="px-4 py-4 text-center">W</th>
-              <th className="px-4 py-4 text-center">D</th>
-              <th className="px-4 py-4 text-center">L</th>
-              <th className="px-4 py-4 text-center">GD</th>
-              <th className="px-4 py-4 text-center">PTS</th>
+              <th className="px-3 py-3 md:px-4 md:py-4 w-10">#</th>
+              <th className="px-3 py-3 md:px-4 md:py-4">Team</th>
+              <th className="px-3 py-3 md:px-4 md:py-4 text-center">P</th>
+              <th className="px-3 py-3 md:px-4 md:py-4 text-center">W</th>
+              <th className="px-3 py-3 md:px-4 md:py-4 text-center">D</th>
+              <th className="px-3 py-3 md:px-4 md:py-4 text-center">L</th>
+              <th className="px-3 py-3 md:px-4 md:py-4 text-center">GD</th>
+              <th className="px-3 py-3 md:px-4 md:py-4 text-center">PTS</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-secondary">
             {groupTeams.map((team, i) => (
               <tr key={team.id} className={`hover:bg-secondary/40 transition-colors ${i < 2 ? 'bg-primary/5' : ''}`}>
-                <td className="px-4 py-4">
+                <td className="px-3 py-3 md:px-4 md:py-4">
                   <span className={`flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold ${
                     i < 2 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground'
                   }`}>
                     {i + 1}
                   </span>
                 </td>
-                <td className="px-4 py-4">
+                <td className="px-3 py-3 md:px-4 md:py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-xl overflow-hidden border border-secondary/70 bg-secondary/40 flex items-center justify-center shrink-0">
                       {team.logoUrl ? (
@@ -65,12 +66,12 @@ const Standings = ({ teams }: StandingsProps) => {
                     <span className="font-bold text-secondary-foreground">{team.name}</span>
                   </div>
                 </td>
-                <td className="px-4 py-4 text-center text-sm">{team.played}</td>
-                <td className="px-4 py-4 text-center text-primary text-sm">{team.won}</td>
-                <td className="px-4 py-4 text-center text-arena-blue text-sm">{team.drawn}</td>
-                <td className="px-4 py-4 text-center text-arena-red text-sm">{team.lost}</td>
-                <td className="px-4 py-4 text-center text-muted-foreground text-sm">{team.gf - team.ga}</td>
-                <td className="px-4 py-4 text-center">
+                <td className="px-3 py-3 md:px-4 md:py-4 text-center text-sm">{team.played}</td>
+                <td className="px-3 py-3 md:px-4 md:py-4 text-center text-primary text-sm">{team.won}</td>
+                <td className="px-3 py-3 md:px-4 md:py-4 text-center text-arena-blue text-sm">{team.drawn}</td>
+                <td className="px-3 py-3 md:px-4 md:py-4 text-center text-arena-red text-sm">{team.lost}</td>
+                <td className="px-3 py-3 md:px-4 md:py-4 text-center text-muted-foreground text-sm">{team.gf - team.ga}</td>
+                <td className="px-3 py-3 md:px-4 md:py-4 text-center">
                   <span className="px-2 py-1 rounded-lg bg-primary/10 text-primary font-black text-sm">
                     {team.points}
                   </span>
@@ -79,6 +80,7 @@ const Standings = ({ teams }: StandingsProps) => {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
