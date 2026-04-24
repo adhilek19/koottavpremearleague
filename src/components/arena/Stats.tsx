@@ -88,21 +88,21 @@ const Stats = ({ players, teams, matches, onPlayerClick }: StatsProps) => {
                   <div 
                     key={player.id} 
                     onClick={() => onPlayerClick(player.id)}
-                    className="flex items-center justify-between p-4 border-b border-secondary last:border-0 hover:bg-secondary/40 transition-colors cursor-pointer group"
+                    className="flex items-center justify-between gap-3 p-4 border-b border-secondary last:border-0 hover:bg-secondary/40 transition-colors cursor-pointer group"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
                       <span className="w-6 text-sm font-black text-muted-foreground">{i + 1}</span>
                       <img 
                         src={player.photoUrl || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop"} 
                         className="w-10 h-10 rounded-full object-cover border border-secondary group-hover:border-amber transition-colors"
                         alt={player.name}
                       />
-                      <div>
-                        <p className="font-bold text-foreground group-hover:text-amber transition-colors">{player.name}</p>
-                        <p className="text-xs text-muted-foreground uppercase tracking-tighter font-semibold">{team?.name}</p>
+                      <div className="min-w-0">
+                        <p className="font-bold text-foreground group-hover:text-amber transition-colors truncate">{player.name}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-tighter font-semibold truncate">{team?.name}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                       <div className="flex items-center gap-2 bg-amber/10 px-3 py-1 rounded-lg">
                         <Target className="w-4 h-4 text-amber" />
                         <span className="font-black text-amber">{player.goals}</span>
@@ -133,9 +133,9 @@ const Stats = ({ players, teams, matches, onPlayerClick }: StatsProps) => {
               cleanSheets.map((item, i) => (
                 <div 
                   key={item.team.id} 
-                  className="flex items-center justify-between p-4 border-b border-secondary last:border-0 hover:bg-secondary/40 transition-colors"
+                  className="flex items-center justify-between gap-3 p-4 border-b border-secondary last:border-0 hover:bg-secondary/40 transition-colors"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
                     <span className="w-6 text-sm font-black text-muted-foreground">{i + 1}</span>
                     <div 
                       className="w-10 h-10 rounded-full flex items-center justify-center border-2 overflow-hidden bg-secondary/40"
@@ -147,12 +147,12 @@ const Stats = ({ players, teams, matches, onPlayerClick }: StatsProps) => {
                         <span className="font-black text-lg">{item.team.name.charAt(0)}</span>
                       )}
                     </div>
-                    <div>
-                      <p className="font-bold text-foreground">{item.team.name}</p>
-                      <p className="text-xs text-muted-foreground uppercase tracking-tighter font-semibold">Group {item.team.group}</p>
+                    <div className="min-w-0">
+                      <p className="font-bold text-foreground truncate">{item.team.name}</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-tighter font-semibold truncate">Group {item.team.group}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                     <div className="flex items-center gap-2 bg-primary/10 px-3 py-1 rounded-lg">
                       <ShieldCheck className="w-4 h-4 text-primary" />
                       <span className="font-black text-primary">{item.count}</span>
