@@ -138,10 +138,14 @@ const Stats = ({ players, teams, matches, onPlayerClick }: StatsProps) => {
                   <div className="flex items-center gap-4">
                     <span className="w-6 text-sm font-black text-muted-foreground">{i + 1}</span>
                     <div 
-                      className="w-10 h-10 rounded-full flex items-center justify-center border-2 font-black text-lg"
+                      className="w-10 h-10 rounded-full flex items-center justify-center border-2 overflow-hidden bg-secondary/40"
                       style={{ borderColor: item.team.color, color: item.team.color }}
                     >
-                      {item.team.name.charAt(0)}
+                      {item.team.logoUrl ? (
+                        <img src={item.team.logoUrl} alt={`${item.team.name} logo`} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="font-black text-lg">{item.team.name.charAt(0)}</span>
+                      )}
                     </div>
                     <div>
                       <p className="font-bold text-foreground">{item.team.name}</p>

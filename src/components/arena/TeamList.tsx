@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Team, Player, Formation } from '@/types/arena';
-import { Edit2, Save, X, ExternalLink, Plus, Trash2, Camera, Repeat, Check, Upload, Link, CircleDollarSign, Users } from 'lucide-react';
+import { Edit2, Save, X, ExternalLink, Plus, Trash2, Camera, Repeat, Check, Upload, Link, CircleDollarSign, Users, ImageIcon } from 'lucide-react';
 import FormationDisplay from './FormationDisplay';
 
 interface TeamListProps {
@@ -22,11 +23,17 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamColor, setNewTeamColor] = useState('#10b981');
   const [newTeamGroup, setNewTeamGroup] = useState<'A' | 'B'>('A');
+  const [uploadingTeamLogoId, setUploadingTeamLogoId] = useState<string | null>(null);
 
   const [isCameraActive, setIsCameraActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const teamLogoInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const groupACount = teams.filter(team => team.group === 'A').length;
+  const groupBCount = teams.filter(team => team.group === 'B').length;
+  const canAddMoreTeams = groupACount < 4 || groupBCount < 4;
 
   const startCamera = async () => {
     try {
@@ -102,10 +109,34 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
 
   const handleCreateTeam = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newTeamName.trim()) {
+    if (newTeamName.trim() && (newTeamGroup === 'A' ? groupACount < 4 : groupBCount < 4)) {
       onAddTeam(newTeamName.trim(), newTeamColor, newTeamGroup);
       setNewTeamName('');
       setIsAddingTeam(false);
+    }
+  };
+
+  const handleTeamLogoUpload = async (team: Team, file: File | null) => {
+    if (!file) return;
+
+    try {
+      setUploadingTeamLogoId(team.id);
+      const fileExt = file.name.split('.').pop() || 'png';
+      const safeName = team.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const filePath = `${team.id}/${safeName}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('team-logos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('team-logos').getPublicUrl(filePath);
+      onUpdateTeam(team.id, { logoUrl: data.publicUrl });
+    } catch (error) {
+      console.error('Error uploading team logo:', error);
+    } finally {
+      setUploadingTeamLogoId(null);
     }
   };
 
@@ -113,7 +144,7 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
     <div key={team.id} className="glass-card rounded-2xl overflow-hidden flex flex-col group border-t-4" style={{ borderColor: team.color }}>
       <div className="p-6 flex-1">
         <div className="flex flex-col gap-2 mb-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between gap-3">
             {editingTeam?.id === team.id ? (
               <div className="flex flex-col gap-2">
                 <input 
@@ -146,9 +177,21 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
                 <button onClick={handleSaveTeam} className="self-start p-1 text-primary"><Check className="w-5 h-5" /></button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className="w-14 h-14 rounded-2xl border border-secondary/70 bg-secondary/40 overflow-hidden flex items-center justify-center shrink-0"
+                  style={{ boxShadow: `0 0 0 1px ${team.color}33` }}
+                >
+                  {team.logoUrl ? (
+                    <img src={team.logoUrl} alt={`${team.name} logo`} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black" style={{ backgroundColor: `${team.color}20`, color: team.color }}>
+                      {team.name.charAt(0)}
+                    </div>
+                  )}
+                </div>
                 <h3 
-                  className={`text-xl font-bold ${isAdmin ? 'cursor-pointer hover:text-primary' : ''}`}
+                  className={`text-xl font-bold truncate ${isAdmin ? 'cursor-pointer hover:text-primary' : ''}`}
                   onClick={() => isAdmin && setEditingTeam({ id: team.id, name: team.name, manager: team.manager || '', formation: team.formation || '1-2-1' })}
                 >
                   {team.name}
@@ -178,6 +221,31 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
             <p className="text-xs text-muted-foreground font-medium">
               Manager: <span className="text-foreground">{team.manager}</span>
             </p>
+          )}
+          {isAdmin && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => teamLogoInputRefs.current[team.id]?.click()}
+                className="flex items-center gap-2 bg-secondary/50 hover:bg-secondary text-secondary-foreground px-3 py-2 rounded-lg text-xs font-bold transition-colors"
+              >
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span>{uploadingTeamLogoId === team.id ? 'Uploading...' : team.logoUrl ? 'Change Logo' : 'Upload Logo'}</span>
+              </button>
+              <input
+                ref={(node) => { teamLogoInputRefs.current[team.id] = node; }}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  void handleTeamLogoUpload(team, e.target.files?.[0] || null);
+                  e.target.value = '';
+                }}
+              />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                Group {team.group || 'A'}
+              </span>
+            </div>
           )}
           <button
             onClick={() => setShowFormation(showFormation === team.id ? null : team.id)}
@@ -349,9 +417,9 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="text-3xl font-extrabold text-foreground">Team Management</h2>
-          <p className="text-muted-foreground">Tournament Groups A & B • 7 Players each</p>
+          <p className="text-muted-foreground">Group A: {groupACount}/4 teams • Group B: {groupBCount}/4 teams</p>
         </div>
-        {isAdmin && !isAddingTeam && (
+        {isAdmin && !isAddingTeam && canAddMoreTeams && (
           <button 
             onClick={() => setIsAddingTeam(true)}
             className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 px-6 rounded-2xl shadow-lg transition-all active:scale-95"
@@ -377,10 +445,13 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
               <span className="text-muted-foreground text-sm">Team Color</span>
             </div>
             <select value={newTeamGroup} onChange={e => setNewTeamGroup(e.target.value as 'A' | 'B')} className="bg-secondary text-secondary-foreground p-3 rounded-xl outline-none">
-              <option value="A">Group A</option>
-              <option value="B">Group B</option>
+              <option value="A" disabled={groupACount >= 4}>Group A</option>
+              <option value="B" disabled={groupBCount >= 4}>Group B</option>
             </select>
           </div>
+          <p className="text-xs text-muted-foreground font-medium">
+            Each group supports up to 4 teams.
+          </p>
           <div className="flex gap-2">
             <button type="submit" className="flex items-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 px-5 rounded-xl">
               <Check className="w-4 h-4" /> Create Team
@@ -390,6 +461,12 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
             </button>
           </div>
         </form>
+      )}
+
+      {isAdmin && !canAddMoreTeams && (
+        <div className="glass-card p-4 rounded-2xl border border-secondary/60 text-sm text-muted-foreground">
+          Group A and Group B already contain 4 teams each. You can still upload logos for every team below.
+        </div>
       )}
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">

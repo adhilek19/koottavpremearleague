@@ -289,8 +289,12 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
 
           <div className="flex items-center justify-center gap-6 py-4">
             <div className="flex-1 text-center">
-              <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg" style={{ backgroundColor: teamA.color + '20', borderColor: teamA.color, borderWidth: 2 }}>
-                <span className="text-2xl font-black" style={{ color: teamA.color }}>{teamA.name.charAt(0)}</span>
+              <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg overflow-hidden bg-secondary/30" style={{ backgroundColor: teamA.logoUrl ? undefined : teamA.color + '20', borderColor: teamA.color, borderWidth: 2 }}>
+                {teamA.logoUrl ? (
+                  <img src={teamA.logoUrl} alt={`${teamA.name} logo`} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-2xl font-black" style={{ color: teamA.color }}>{teamA.name.charAt(0)}</span>
+                )}
               </div>
               <p className="font-bold text-secondary-foreground text-sm">{teamA.name}</p>
               {/* Team A Scorers */}
@@ -338,8 +342,12 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
             </div>
 
             <div className="flex-1 text-center">
-              <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg" style={{ backgroundColor: teamB.color + '20', borderColor: teamB.color, borderWidth: 2 }}>
-                <span className="text-2xl font-black" style={{ color: teamB.color }}>{teamB.name.charAt(0)}</span>
+              <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg overflow-hidden bg-secondary/30" style={{ backgroundColor: teamB.logoUrl ? undefined : teamB.color + '20', borderColor: teamB.color, borderWidth: 2 }}>
+                {teamB.logoUrl ? (
+                  <img src={teamB.logoUrl} alt={`${teamB.name} logo`} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-2xl font-black" style={{ color: teamB.color }}>{teamB.name.charAt(0)}</span>
+                )}
               </div>
               <p className="font-bold text-secondary-foreground text-sm">{teamB.name}</p>
               {/* Team B Scorers */}

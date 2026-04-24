@@ -17,6 +17,7 @@ export interface Team {
   id: string;
   name: string;
   color: string;
+  logoUrl?: string;
   group?: 'A' | 'B';
   manager?: string;
   formation?: Formation;

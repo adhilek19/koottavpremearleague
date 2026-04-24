@@ -7,6 +7,7 @@ interface DbTeam {
   id: string;
   name: string;
   color: string;
+  logo_url: string | null;
   group: string | null;
   manager: string | null;
   formation: string | null;
@@ -124,6 +125,7 @@ export const useArenaData = () => {
         id: t.id,
         name: t.name,
         color: t.color,
+        logoUrl: t.logo_url || undefined,
         group: (t.group as 'A' | 'B') || 'A',
         manager: t.manager || undefined,
         formation: (t.formation as Formation) || '1-2-1',
@@ -325,6 +327,7 @@ export const useArenaData = () => {
     await supabase.from('teams').update({
       name: updates.name,
       color: updates.color,
+      logo_url: updates.logoUrl,
       group: updates.group,
       manager: updates.manager,
       formation: updates.formation,
