@@ -54,7 +54,7 @@ const Dashboard = ({ teams, matches, setView, isAdmin }: DashboardProps) => {
           <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">Arena Dashboard</h2>
           <p className="text-sm text-muted-foreground">8 Teams • 56 Players • Live Stats</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           {isAdmin && (
             <button 
               onClick={() => setView('matches')}
@@ -109,20 +109,22 @@ const Dashboard = ({ teams, matches, setView, isAdmin }: DashboardProps) => {
             </button>
           </div>
           <div className="glass-card rounded-2xl overflow-hidden border border-secondary/50 shadow-xl">
-            <table className="w-full text-left">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[32rem] text-left">
               <thead className="bg-secondary/50 text-muted-foreground text-[10px] uppercase font-black tracking-widest">
                 <tr>
-                  <th className="px-6 py-4"># Team</th>
-                  <th className="px-6 py-4 text-center">P</th>
-                  <th className="px-6 py-4 text-center">W</th>
-                  <th className="px-6 py-4 text-center">GD</th>
-                  <th className="px-6 py-4 text-center">PTS</th>
+                  <th className="px-4 py-3 md:px-6 md:py-4"># Team</th>
+                  <th className="px-4 py-3 md:px-6 md:py-4 text-center">P</th>
+                  <th className="px-4 py-3 md:px-6 md:py-4 text-center">W</th>
+                  <th className="px-4 py-3 md:px-6 md:py-4 text-center">GD</th>
+                  <th className="px-4 py-3 md:px-6 md:py-4 text-center">PTS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-secondary">
                 {sortedTeams.slice(0, 4).map((team, i) => (
                   <tr key={team.id} className="hover:bg-secondary/30 transition-colors">
-                    <td className="px-6 py-4 flex items-center gap-3">
+                    <td className="px-4 py-3 md:px-6 md:py-4">
+                      <div className="flex items-center gap-3 min-w-0">
                       <span className="font-bold text-muted-foreground w-4">{i + 1}</span>
                         <div className="w-8 h-8 rounded-xl overflow-hidden border border-secondary/70 bg-secondary/40 flex items-center justify-center shrink-0">
                           {team.logoUrl ? (
@@ -131,16 +133,18 @@ const Dashboard = ({ teams, matches, setView, isAdmin }: DashboardProps) => {
                             <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: team.color }}></div>
                           )}
                         </div>
-                      <span className="font-semibold text-secondary-foreground">{team.name}</span>
+                      <span className="font-semibold text-secondary-foreground truncate">{team.name}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-center text-muted-foreground text-sm">{team.played}</td>
-                    <td className="px-6 py-4 text-center text-muted-foreground text-sm">{team.won}</td>
-                    <td className="px-6 py-4 text-center text-muted-foreground text-sm">{team.gf - team.ga}</td>
-                    <td className="px-6 py-4 text-center font-bold text-primary">{team.points}</td>
+                    <td className="px-4 py-3 md:px-6 md:py-4 text-center text-muted-foreground text-sm">{team.played}</td>
+                    <td className="px-4 py-3 md:px-6 md:py-4 text-center text-muted-foreground text-sm">{team.won}</td>
+                    <td className="px-4 py-3 md:px-6 md:py-4 text-center text-muted-foreground text-sm">{team.gf - team.ga}</td>
+                    <td className="px-4 py-3 md:px-6 md:py-4 text-center font-bold text-primary">{team.points}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 
@@ -165,7 +169,7 @@ const Dashboard = ({ teams, matches, setView, isAdmin }: DashboardProps) => {
               <h4 className="text-2xl font-black text-foreground tracking-tight">{leader.name}</h4>
               <p className="text-muted-foreground font-medium mb-6 uppercase text-[10px] tracking-widest">Tournament Top Seed</p>
               
-              <div className="flex gap-4 w-full justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
                 <div className="bg-secondary/80 rounded-2xl p-4 flex-1 border border-secondary">
                   <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Wins</p>
                   <p className="text-2xl font-black text-primary">{leader.won}</p>
