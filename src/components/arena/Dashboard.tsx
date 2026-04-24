@@ -124,7 +124,13 @@ const Dashboard = ({ teams, matches, setView, isAdmin }: DashboardProps) => {
                   <tr key={team.id} className="hover:bg-secondary/30 transition-colors">
                     <td className="px-6 py-4 flex items-center gap-3">
                       <span className="font-bold text-muted-foreground w-4">{i + 1}</span>
-                      <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: team.color }}></div>
+                        <div className="w-8 h-8 rounded-xl overflow-hidden border border-secondary/70 bg-secondary/40 flex items-center justify-center shrink-0">
+                          {team.logoUrl ? (
+                            <img src={team.logoUrl} alt={`${team.name} logo`} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: team.color }}></div>
+                          )}
+                        </div>
                       <span className="font-semibold text-secondary-foreground">{team.name}</span>
                     </td>
                     <td className="px-6 py-4 text-center text-muted-foreground text-sm">{team.played}</td>
@@ -147,10 +153,14 @@ const Dashboard = ({ teams, matches, setView, isAdmin }: DashboardProps) => {
             </div>
             <div className="relative z-10 flex flex-col items-center">
               <div 
-                className="w-24 h-24 rounded-full border-4 border-secondary flex items-center justify-center mb-4 transition-transform group-hover:scale-110 shadow-xl"
+                className="w-24 h-24 rounded-full border-4 border-secondary flex items-center justify-center mb-4 transition-transform group-hover:scale-110 shadow-xl overflow-hidden bg-secondary/40"
                 style={{ borderColor: leader.color }}
               >
-                <Trophy className="w-10 h-10" style={{ color: leader.color }} />
+                {leader.logoUrl ? (
+                  <img src={leader.logoUrl} alt={`${leader.name} logo`} className="w-full h-full object-cover" />
+                ) : (
+                  <Trophy className="w-10 h-10" style={{ color: leader.color }} />
+                )}
               </div>
               <h4 className="text-2xl font-black text-foreground tracking-tight">{leader.name}</h4>
               <p className="text-muted-foreground font-medium mb-6 uppercase text-[10px] tracking-widest">Tournament Top Seed</p>
