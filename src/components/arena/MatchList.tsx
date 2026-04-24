@@ -257,9 +257,9 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
           </button>
         )}
         
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+        <div className="p-4 md:p-6">
+          <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2 pr-10 sm:pr-0">
               <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded ${
                 match.status === 'live' ? 'bg-arena-red/20 text-arena-red animate-pulse' :
                 match.status === 'finished' ? 'bg-primary/20 text-primary' :
@@ -274,7 +274,7 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               {match.status === 'live' && (
                 <div className="flex items-center gap-1.5 bg-arena-red/10 px-3 py-1.5 rounded-lg">
                   <Timer className="w-4 h-4 text-arena-red animate-pulse" />
@@ -287,8 +287,8 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-6 py-4">
-            <div className="flex-1 text-center">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 md:gap-6 py-4">
+            <div className="min-w-0 text-center">
               <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg overflow-hidden bg-secondary/30" style={{ backgroundColor: teamA.logoUrl ? undefined : teamA.color + '20', borderColor: teamA.color, borderWidth: 2 }}>
                 {teamA.logoUrl ? (
                   <img src={teamA.logoUrl} alt={`${teamA.name} logo`} className="w-full h-full object-cover" />
@@ -296,12 +296,12 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
                   <span className="text-2xl font-black" style={{ color: teamA.color }}>{teamA.name.charAt(0)}</span>
                 )}
               </div>
-              <p className="font-bold text-secondary-foreground text-sm">{teamA.name}</p>
+              <p className="font-bold text-secondary-foreground text-sm break-words">{teamA.name}</p>
               {/* Team A Scorers */}
               {(match.status === 'live' || match.status === 'finished') && scorers.teamA.length > 0 && (
                 <div className="mt-2 space-y-0.5">
                   {scorers.teamA.map((name, i) => (
-                    <p key={i} className="text-[10px] text-amber flex items-center justify-center gap-1">
+                    <p key={i} className="text-[10px] text-amber flex items-center justify-center gap-1 break-words">
                       <Target className="w-3 h-3" /> {name}
                     </p>
                   ))}
@@ -311,7 +311,7 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
               {subsA.length > 0 && (
                 <div className="mt-2 space-y-0.5">
                   {subsA.map((sub, i) => (
-                    <p key={i} className="text-[9px] text-muted-foreground flex items-center justify-center gap-1">
+                    <p key={i} className="text-[9px] text-muted-foreground flex flex-wrap items-center justify-center gap-1 break-words">
                       <ArrowRightLeft className="w-3 h-3 text-arena-blue" />
                       <span className="text-arena-red">{sub.playerOutName}</span>
                       <span>→</span>
@@ -323,25 +323,25 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
               )}
             </div>
 
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col items-center justify-center gap-2 pt-3 md:pt-0">
+              <div className="flex items-center gap-1 md:gap-3">
                 {isAdmin && match.status === 'live' && (
-                  <button onClick={() => setScoringContext({ match, teamId: teamA.id })} className="w-8 h-8 rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center">
+                  <button onClick={() => setScoringContext({ match, teamId: teamA.id })} className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center shrink-0">
                     <Target className="w-4 h-4" />
                   </button>
                 )}
-                <span className="text-4xl font-black text-foreground tracking-tight">{match.scoreA}</span>
-                <span className="text-2xl font-bold text-muted-foreground">:</span>
-                <span className="text-4xl font-black text-foreground tracking-tight">{match.scoreB}</span>
+                <span className="text-3xl md:text-4xl font-black text-foreground tracking-tight">{match.scoreA}</span>
+                <span className="text-xl md:text-2xl font-bold text-muted-foreground">:</span>
+                <span className="text-3xl md:text-4xl font-black text-foreground tracking-tight">{match.scoreB}</span>
                 {isAdmin && match.status === 'live' && (
-                  <button onClick={() => setScoringContext({ match, teamId: teamB.id })} className="w-8 h-8 rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center">
+                  <button onClick={() => setScoringContext({ match, teamId: teamB.id })} className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center shrink-0">
                     <Target className="w-4 h-4" />
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="flex-1 text-center">
+            <div className="min-w-0 text-center">
               <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg overflow-hidden bg-secondary/30" style={{ backgroundColor: teamB.logoUrl ? undefined : teamB.color + '20', borderColor: teamB.color, borderWidth: 2 }}>
                 {teamB.logoUrl ? (
                   <img src={teamB.logoUrl} alt={`${teamB.name} logo`} className="w-full h-full object-cover" />
@@ -349,12 +349,12 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
                   <span className="text-2xl font-black" style={{ color: teamB.color }}>{teamB.name.charAt(0)}</span>
                 )}
               </div>
-              <p className="font-bold text-secondary-foreground text-sm">{teamB.name}</p>
+              <p className="font-bold text-secondary-foreground text-sm break-words">{teamB.name}</p>
               {/* Team B Scorers */}
               {(match.status === 'live' || match.status === 'finished') && scorers.teamB.length > 0 && (
                 <div className="mt-2 space-y-0.5">
                   {scorers.teamB.map((name, i) => (
-                    <p key={i} className="text-[10px] text-amber flex items-center justify-center gap-1">
+                    <p key={i} className="text-[10px] text-amber flex items-center justify-center gap-1 break-words">
                       <Target className="w-3 h-3" /> {name}
                     </p>
                   ))}
@@ -364,7 +364,7 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
               {subsB.length > 0 && (
                 <div className="mt-2 space-y-0.5">
                   {subsB.map((sub, i) => (
-                    <p key={i} className="text-[9px] text-muted-foreground flex items-center justify-center gap-1">
+                    <p key={i} className="text-[9px] text-muted-foreground flex flex-wrap items-center justify-center gap-1 break-words">
                       <ArrowRightLeft className="w-3 h-3 text-arena-blue" />
                       <span className="text-arena-red">{sub.playerOutName}</span>
                       <span>→</span>
@@ -401,7 +401,7 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
                   <span className="text-xs font-bold w-8" style={{ color: teamB.color }}>{match.stats.teamB.possession}%</span>
                 </div>
                 {/* Other Stats */}
-                <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
                   <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-secondary/50">
                     <span className="text-xs font-bold" style={{ color: teamA.color }}>{match.stats.teamA.shotsOnTarget}</span>
                     <span className="text-[9px] text-muted-foreground flex items-center gap-1"><Target className="w-3 h-3" /> Shots</span>
@@ -419,7 +419,7 @@ const MatchList = ({ matches, teams, onUpdateMatch, onAddMatch, onDeleteMatch, o
                   </div>
                 </div>
                 {/* Cards */}
-                <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-center">
                   <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-amber/10">
                     <span className="text-xs font-bold text-amber">{match.stats.teamA.yellowCards}</span>
                     <span className="text-[9px] text-amber flex items-center gap-1"><Square className="w-3 h-3 fill-amber" /> Yellow</span>

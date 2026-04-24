@@ -141,8 +141,8 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
   };
 
   const renderTeamCard = (team: Team) => (
-    <div key={team.id} className="glass-card rounded-2xl overflow-hidden flex flex-col group border-t-4" style={{ borderColor: team.color }}>
-      <div className="p-6 flex-1">
+      <div key={team.id} className="glass-card rounded-2xl overflow-hidden flex flex-col group border-t-4" style={{ borderColor: team.color }}>
+      <div className="p-4 md:p-6 flex-1">
         <div className="flex flex-col gap-2 mb-6">
           <div className="flex items-start justify-between gap-3">
             {editingTeam?.id === team.id ? (
@@ -177,7 +177,7 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
                 <button onClick={handleSaveTeam} className="self-start p-1 text-primary"><Check className="w-5 h-5" /></button>
               </div>
             ) : (
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div
                   className="w-14 h-14 rounded-2xl border border-secondary/70 bg-secondary/40 overflow-hidden flex items-center justify-center shrink-0"
                   style={{ boxShadow: `0 0 0 1px ${team.color}33` }}
@@ -191,7 +191,7 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
                   )}
                 </div>
                 <h3 
-                  className={`text-xl font-bold truncate ${isAdmin ? 'cursor-pointer hover:text-primary' : ''}`}
+                  className={`text-lg md:text-xl font-bold truncate ${isAdmin ? 'cursor-pointer hover:text-primary' : ''}`}
                   onClick={() => isAdmin && setEditingTeam({ id: team.id, name: team.name, manager: team.manager || '', formation: team.formation || '1-2-1' })}
                 >
                   {team.name}
@@ -275,8 +275,8 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
         <div className="space-y-2">
           {team.players.map((player, i) => (
             <div key={player.id} className="flex flex-col p-2.5 rounded-xl bg-secondary/40 hover:bg-secondary transition-all border border-transparent hover:border-accent">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-3 min-w-0 flex-1">
                   <img 
                     src={player.photoUrl || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop"} 
                     className="w-10 h-10 rounded-full object-cover border border-secondary cursor-pointer hover:scale-110 transition-transform"
@@ -344,11 +344,11 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
                       </div>
                     </div>
                   ) : (
-                    <div className="cursor-pointer" onClick={() => onPlayerClick(player.id)}>
-                      <span className="text-sm font-bold text-secondary-foreground block hover:text-primary transition-colors">
+                    <div className="cursor-pointer min-w-0" onClick={() => onPlayerClick(player.id)}>
+                      <span className="text-sm font-bold text-secondary-foreground block hover:text-primary transition-colors break-words">
                         {player.name}
                       </span>
-                      <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
                         <span className="text-[10px] text-muted-foreground uppercase font-black">{i > 4 ? 'Sub' : 'Starter'}</span>
                         {player.marketValue && (
                           <span className="text-[10px] text-primary/80 font-bold">€{player.marketValue.toLocaleString()}</span>
@@ -358,7 +358,7 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
                   )}
                 </div>
                 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   {editingPlayer?.id === player.id ? (
                     <div className="flex flex-col gap-1">
                       <button onClick={() => handleSavePlayer(team.id)} className="p-1 text-primary hover:text-primary/80">
@@ -369,7 +369,7 @@ const TeamList = ({ teams, onUpdatePlayer, onTransferPlayer, onUpdateTeam, isAdm
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1">
                       {isAdmin && (
                         <button onClick={() => setEditingPlayer({ id: player.id, name: player.name, photoUrl: player.photoUrl || '', marketValue: player.marketValue || 0, targetTeamId: team.id })} className="p-1.5 text-muted-foreground hover:text-primary">
                           <Edit2 className="w-4 h-4" />
