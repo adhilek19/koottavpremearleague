@@ -55,7 +55,13 @@ const Standings = ({ teams }: StandingsProps) => {
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color }}></div>
+                    <div className="w-8 h-8 rounded-xl overflow-hidden border border-secondary/70 bg-secondary/40 flex items-center justify-center shrink-0">
+                      {team.logoUrl ? (
+                        <img src={team.logoUrl} alt={`${team.name} logo`} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color }}></div>
+                      )}
+                    </div>
                     <span className="font-bold text-secondary-foreground">{team.name}</span>
                   </div>
                 </td>
